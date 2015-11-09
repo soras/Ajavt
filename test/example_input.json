@@ -1,0 +1,191 @@
+{
+	"paragraphs": [
+		{
+			"sentences": [
+				{
+					"words": [
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "sg g",
+									"partofspeech": "S",
+									"root": "potsata=ja"
+								},
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "sg n",
+									"partofspeech": "S",
+									"root": "potsata=ja"
+								}
+							],
+							"text": "Potsataja"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "s",
+									"form": "s",
+									"partofspeech": "V",
+									"root": "ütle"
+								}
+							],
+							"text": "ütles"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "",
+									"partofspeech": "D",
+									"root": "eile"
+								}
+							],
+							"text": "eile,"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "",
+									"partofspeech": "J",
+									"root": "et"
+								}
+							],
+							"text": "et"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "vad",
+									"form": "vad",
+									"partofspeech": "V",
+									"root": "vaata"
+								},
+								{
+									"clitic": "",
+									"ending": "d",
+									"form": "pl n",
+									"partofspeech": "A",
+									"root": "vaatav"
+								}
+							],
+							"text": "vaatavad"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "",
+									"partofspeech": "D",
+									"root": "nüüd"
+								}
+							],
+							"text": "nüüd"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "ga",
+									"form": "sg kom",
+									"partofspeech": "H",
+									"root": "Gena"
+								}
+							],
+							"text": "Genaga"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "sg g",
+									"partofspeech": "N",
+									"root": "viis"
+								}
+							],
+							"text": "viie"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "sg g",
+									"partofspeech": "S",
+									"root": "aasta"
+								},
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "sg n",
+									"partofspeech": "S",
+									"root": "aasta"
+								}
+							],
+							"text": "aasta"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "d",
+									"form": "pl n",
+									"partofspeech": "S",
+									"root": "plaan"
+								},
+								{
+									"clitic": "",
+									"ending": "d",
+									"form": "d",
+									"partofspeech": "V",
+									"root": "plaani"
+								}
+							],
+							"text": "plaanid"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "",
+									"partofspeech": "D",
+									"root": "uuesti"
+								}
+							],
+							"text": "uuesti"
+						},
+						{
+							"analysis": [
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "",
+									"partofspeech": "D",
+									"root": "üle"
+								},
+								{
+									"clitic": "",
+									"ending": "0",
+									"form": "",
+									"partofspeech": "K",
+									"root": "üle"
+								}
+							],
+							"text": "üle"
+						}
+					]
+				}
+			]
+		}
+	]
+}
