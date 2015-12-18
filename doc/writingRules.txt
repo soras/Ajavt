@@ -1,0 +1,658 @@
+=========================================
+=========================================
+   Writing rules for Ajavt
+=========================================
+=========================================
+ 
+   Most of the processing logic of Ajavt -- from the patterns that guide the extraction 
+  of temporal expressions to the instructions used for normalising semantics of the 
+  expressions -- is described in an XML format rules file.
+   The default set of rules (developed for processing news texts) can be found from file 
+  "reeglid.xml", the same file also contains DTD for the XML document.
+   Here, we give a brief overview about the structure and semantics of the rules.
+   A detailed overview on the system and its processing logic can be found from 
+  (Orasmaa 2010).
+
+=================================
+   Basic  structure
+=================================
+  The set of rules is between tags <Reeglid>. 
+  The basic extraction rules (within <Reegel> tags) are the primary type of rules, 
+      which guide how temporal expression candidates should be extracted from text. The 
+      basic extraction rules also contain instructions for normalising semantics of the 
+      candidate expressions (<SemReegel> elements);
+  Word classes (<SonaKlass> elements within <SonaKlassid> tags) specify reusable parts 
+      of the basic extraction rules, e.g. a list of all month names can be defined 
+      as a word class, so it can be reused in multiple basic extraction rules;
+  And the composition rules (within <LiitumisReegel> tags) specify how temporal expression
+      candidates extracted by the basic extraction rules should be joined into longer 
+      temporal expression phrases;
+
+=================================
+   Basic extraction rules
+   (<Reegel>)
+=================================
+    A minimal basic extraction rule (<Reegel>) consists of a phrase pattern describing
+    extractible temporal expression phrase (within <Muster> tags), and one or more 
+    instructions for normalising semantics of the expression (<SemReegel> elements);
+    
+    Other elements allow to specify:
+    1) which additional morphological constraints a phrase must satisfy in order to
+       be associated with the given set of normalisation instructions (tag <Filter>);
+    2) which are the negative examples of phrases that should be discarded (tag 
+       <NegMuster>);
+    3) which is the label of temporal expression phrase (tag <MustriTahis>); Labels are
+       used to guide how phrases should be joined into longer phrases in composition
+       rules;
+
+    The process more technically:
+    After the phrase pattern (within <Muster> tags) has matched with a sequence of 
+    tokens, a candidate temporal expression will be extracted. In subsequent steps, this 
+    candidate can be removed by morphological constraints (tag <Filter>), by negative 
+    patterns (tag <NegMuster>), and by built-in overlap-detection rules (a smaller 
+    candidate entirely contained within a longer one will be removed), or it can be joined 
+    into a composite phrase (the joining is guided by <MustriTahis> tags). After these 
+    steps, the candidate goes through a step-by-step application of normalisation 
+    instructions, and only after the normalisation succeeds, the candidate is turned into
+    a full temporal expression annotation;
+
+---------------------------------
+   Phrase patterns
+   (<Muster>)
+---------------------------------
+   An extractible temporal expression phrase is described token-by-token within 
+   <Muster> tags. Token descriptions aka word templates should be separated by spaces.
+   Following types of word templates can be used:
+
+   1) basic text -- case insensitive surface form of the word. 
+      Example: the pattern 
+        <Muster> 'täna' </Muster>
+      matches only the token 'täna' in case insensitive manner;
+
+   2) regular expression -- matches the word token by a regular expression (based on
+      java.util.regex.Pattern);
+      Example: the pattern
+        <Muster> /(sündinud|s|snd|sünd)/ </Muster>
+      matches tokens 'sündinud', 's', 'snd' and 'sünd';
+
+   3) word lemma -- matches the word token by its lemma (based on morphological 
+      analysis).
+      Example: the pattern
+        <Muster> |esmaspäev| </Muster>
+      matches all different surface forms of the word, e.g. 'esmaspäev', 'esmaspäeval',
+      'esmaspäevani', 'esmaspäevadeks' etc.
+      Additionally, part-of-speech of the lemma can be specified in parenthesis at the 
+      end of the lemma: e.g. |täna(_D_)| mathes only the adverb 'täna';
+      Filosoft's part-of-speech tags are assumed 
+      ( http://www.filosoft.ee/html_morf_et/morfoutinfo.html#2 );
+
+   4) word class -- matches one word from a class of words defined in within 
+      <SonaKlassid> tags; Name of the word class is conventionally given in 
+      uppercase letters;
+      Example: the pattern
+        <Muster> NADALAPAEV </Muster>
+      matches the word class NADALAPAEV (see the definition under the section word 
+      class);
+
+
+   A phrase pattern can also contain optional word templates: templates that can be 
+   skipped during the matching. Optionality is defined by adding '?' at the end of
+   the template, e.g.
+      the pattern
+        <Muster> |järgmine|? |esmaspäev| </Muster>
+      matches both phrases 'järgmisel esmaspäeval' and 'esmaspäeval';
+   At least one word template must remain non-optional for a rule to be functional;
+
+
+   Word templates prefixed with '!' are required to match, but they will be discarded 
+   from the final temporal expression phrase, e.g.
+      the pattern   
+      <Muster>
+         !/(sündinud|s|snd|sünd)/  /([1-2][0-9][0-9][0-9])\)?/
+      </Muster>
+      matches the phrase 'sündinud 1983', but the extent of the annotation covers only
+      the numerical year ('1983');
+
+---------------------------------
+   Word Classes
+   (<SonaKlass>)
+---------------------------------
+  Word classes (<SonaKlass> elements within <SonaKlassid> tags) can be used to define
+  word templates that are 1) reusable between different basic extraction rules, and 
+  2) merge a list of word templates into a single template;
+
+  The name of the word class (nimi) must be in uppercase letters without any spaces 
+  (more specifically: matching the pattern "^[A-Z0-9_]+$");
+
+  The content of the class must be one or more <Element>-s describing word templates
+  contained within the class. The word class matches with a token if at least one 
+  of these elements matches the token;
+  
+  Within each element, both extraction part and normalisation parts are specified.
+  Attributes related to extraction part are:
+    *) tyyp -- type of the word template, one of the following:
+        "algv"    -- word lemma;
+        "reg"     -- regular expression;
+        "tekst"   -- basic text;
+        "arvSona" -- numeral phrase;
+        "eriArv"  -- special numeral;
+    *) vaartus -- string of the word template: a lemma in case of tyyp="algv",
+        a regular expression in case of tyyp="reg" and a text in case of tyyp="tekst";
+        
+        For example, the word class matching all weekday names can be defined 
+        using lemma based word templates:
+
+            <SonaKlass nimi="NADALAPAEV">
+                <Element tyyp="algv" vaartus="esmaspäev"> <!-- Mon -->
+                <Element tyyp="algv" vaartus="teisipäev"> <!-- Tue -->
+                <Element tyyp="algv" vaartus="kolmapäev"> <!-- Wed -->
+                <Element tyyp="algv" vaartus="neljapäev"> <!-- Thu -->
+                <Element tyyp="algv" vaartus="reede">     <!-- Fri -->
+                <Element tyyp="algv" vaartus="laupäev">   <!-- Sat -->
+                <Element tyyp="algv" vaartus="pühapäev">  <!-- Sun -->
+            </SonaKlass>
+
+        In case of numeral phrase (tyyp="arvSona"), the attribute "vaartus" is 
+        omitted and the attribute "arvuLiik" specifies the type of the numeral:
+           arvuLiik="_N_" -- cardinal numeral;
+           arvuLiik="_O_" -- ordinal numeral;
+           arvuLiik="_F_" -- floating-point numeral;
+        and the attribute "arvuPiirang" specifies the (integer) range of allowed 
+        values, e.g. 
+           <Element tyyp="arvSona" arvuPiirang="1-23"  arvuLiik="_N_" >
+        defines a template for matching cardinal numeral phrases describing numbers
+        from range 1-23 (such as 'üks', 'kaks', ..., 'kakskümmend kolm');
+
+        Setting the tyyp="eriArv" and arvuLiik="_R_" allows to match roman numerals
+        from the range given in arvuPiirang, e.g.
+           <Element tyyp="eriArv" arvuLiik="_R_"  arvuPiirang="1-12" >
+        defines a template for matching 'I', 'II', 'III', ..., 'XII';
+        
+   Attributes related to normalisation part -- "semField", "op", "semValue", "semLabel",
+  "direction", "mudel" -- are used to prefill parts of normalisation instructions. 
+   The basic idea is that normalisation instructions can be constructed dynamically,
+  depending on the word class elements that have matched the tokens;
+   Functions and possible values of normalisation attributes are described in more detail 
+  in the section "Normalisation instructions";
+
+
+---------------------------------
+   Morphology-based filters
+   (<Filter>)
+---------------------------------
+  After defining the phrase pattern at fairly general level (e.g. only applying 
+  restrictions on lemmas and/or part of speech of tokens), one can apply further 
+  morphological restrictions with <Filter> tags.
+  All the instructions within <Filter> tags (there can be instructions conveyed by 
+  <SemReegel> and <MustriTahis> elements) will be executed only when morphological 
+  constraints imposed by the <Filter> are satisfied. Otherwise, the instructions
+  will be disgarded.
+  
+  The attribute "morfTunnused" in <Filter> tag is used to describe the pattern of 
+  restrictions.
+  For each token in the phrase pattern (regardless whether the token is optional or 
+  discardable), the pattern must indicate whether it is unrestricted ( indicated by _ ) 
+  or restricted to specific morphological categories ( required categories should be 
+  listed between { and } ). Multiple required categories should be comma-separated, and 
+  multiple allowed categories should be separated by |-s.
+  Morphological categories can be part-of-speech (e.g. _S_ denotes noun, _N_ numeral), 
+  number (e.g. pl = plural, sg = singluar), and cases of nominals (e.g. tr = translative, 
+  kom = comitative);
+  Filosoft's morphological categories are assumed 
+  (http://www.filosoft.ee/html_morf_et/morfoutinfo.html)
+
+  Example:
+        <Muster> |aasta| |tagasi| </Muster>
+        <Filter morfTunnused="{sg} _">
+            <!-- semantics of singular ('aasta tagasi' = a year ago) -->
+            ...
+        </Filter>
+        <Filter morfTunnused="{pl} _">
+            <!-- semantics of plural ('aastaid tagasi' = years ago) -->
+            ... 
+        </Filter>
+   In the previous example, a general pattern for capturing "years ago"-expressions is
+   defined, and morphological filters are used to separate semantics of the expression 
+   in singular ("a year ago") from the semantics of the expression in plural ("years ago");
+
+
+---------------------------------
+   Negative patterns
+   (<NegMuster>)
+---------------------------------
+   Negative patterns are used to prevent the extraction of false temporal expressions, 
+   e.g. to prevent the extraction of 'hommikust' (from morning) from the phrase 'tere 
+   hommikust!' (good morning!);
+
+   Negative patterns are applied after a match has been found by the phrase pattern.
+   
+   A negative pattern is described between <NegMuster> tags, and contains a list of regular
+   expressions (one expression per token) describing the context in which the matching
+   expression should be discarded. Example:
+   
+     <Muster> |hommik| </Muster>
+     <NegMuster startPos="-1"> /(?i)tere/ /hommikust/ </NegMuster>
+
+   The attribute "startPos" specifies the index of the beginning of the negative pattern 
+   with respect to the first word template in the phrase pattern, e.g. startPos="-1" 
+   in previous example indicates that the matching should start one token before
+   the first word captured by the phrase pattern.
+
+
+---------------------------------
+   Pattern labels
+   (<MustriTahis>)
+---------------------------------
+    The primary usage of pattern labels (<MustriTahis> elements) is to guide the process 
+   of joining short extracted phrases into longer ones. The composition rules refer to
+   these labels when describing which phrases need to be joined.
+    
+    <MustriTahis> element uses attribute "seotudMustriosa" to specify the triggering 
+   conditions under which the label will be attached to an extracted phrase candidate;
+   These conditions are described in terms of matching/mismatching word templates in 
+   the phrase pattern.
+    More specifically, triggering conditions contain space-separated references to word
+   templates, each reference must be given either by:
+     1) the index of word template in the phrase pattern (starting from 0), or by
+     2) the name of word class used in the phrase pattern;
+    There must be at least one reference, but it is not required that all word templates
+    must be referred to;
+    The symbol "^" at the beginning of the reference specifies that the corresponding 
+    optional word template must be mismatching;
+     ("^" should be combined with the index, not with the name of word class);
+    
+    <MustriTahis> element uses attribute "tahised" to specify one or more labels that 
+   are to be attached to the extracted temporal expression candidate. A label is a string
+   in uppercase without any spaces (more specifically: matching the pattern "^[A-Z0-9_]+$").
+   If more than one labels are given, commas are used for separating the labels.
+    
+    An example about attaching labels to the phrase pattern:
+        <Muster> |järgmine|? |esmaspäev| <Muster>
+        <!--   if lemma 'järgmine' does not match, attach labels A and B   -->
+        <MustriTahis seotudMustriosa="^0 1" tahised="A,B" />
+        <!--   if both lemmas match, attach label C   -->
+        <MustriTahis  seotudMustriosa="0 1" tahised="C" />
+    
+    The optional attribute assignment  poleEraldiSeisevAjav="1"  specifies that  the 
+   extracted candidate does not function as a stand-alone temporal expression, so it 
+   needs to be removed if it is not merged to a longer phrase by composition rules;
+   This attribute is used for defining modifiers (e.g. 'umbes'=about, 'lõpus'=in the 
+   end of) to be attached to temporal expression phrases;
+
+
+=================================
+   Composition rules
+   (<LiitumisReegel>)
+=================================
+    The composition rules (<LiitumisReegel> tags) specify how extracted short phrase
+   candidates should be joined into longer ones. Basically, a composition rule describes 
+   a set of pattern labels (<MustriTahis> elements) which refer to temporal expression
+   candidates that need to be joined. 
+   Example:
+       <LiitumisReegel tase="FRAAS"> A D </LiitumisReegel>
+       specifies that consecutive candidates, one with label A and other with label D,
+       will be joined together (regardless which one of them comes first);
+    
+    Attribute "tase" specifies the level of joining (a phrase or a temporal interval). 
+   Currently, only the phrase level is supported ("FRAAS");
+    
+    Attribute assignment  fikseeritudJarjekord="1" specifies that the order of the joined 
+   candidates must be exactly the same, as specified inside the composition rule. By 
+   default, the order is free, so the candidates appearing at arbitrary order with respect 
+   to each other will be still joined together;
+    
+    Attribute assignment  tapseltKorvuti="1" (default) specifies that no other phrase 
+   joining can interfere the joining of listed candidates: joinable candidates must be 
+   exactly next to each other, there cannot be a third candidate joined by other rules 
+   between them. 
+    If tapseltKorvuti="0", "interfering" candidates are allowed.
+    Example:
+      The configuration of rules:
+       <LiitumisReegel tase="FRAAS"> A D </LiitumisReegel>
+       <LiitumisReegel tase="FRAAS" tapseltKorvuti="0"> C D </LiitumisReegel>
+      allows to join the sequence of candidates C A D. Otherwise, with default settings 
+      (tapseltKorvuti="1"), only A D would be joined from the sequence C A D;
+    
+   Full example - basic extraction rules + composition rules: 
+     <Reegel>
+        <Muster> |järgmine|? |esmaspäev| <Muster>
+        <MustriTahis seotudMustriosa="^0 1" tahised="A,B" />
+        ...  <!--   semantics here   -->
+     </Reegel>
+     <Reegel>
+        <Muster> |järgmine| |nädal| <Muster>
+        <MustriTahis seotudMustriosa="1" tahised="D" />
+        ...  <!--   semantics here   -->
+     </Reegel>
+    
+     <LiitumisReegel tase="FRAAS"> A D </LiitumisReegel>
+    
+    This specifies to join phrase candidates 'järgmise nädala' and 'esmaspäeval' 
+   (on next week + Monday) if these phrases appear consecutively;
+    
+    How the semantics are resolved in case of the joining is specified under the
+   normalisation instructions.
+
+
+=================================
+   Normalisation instructions
+   (<SemReegel>)
+=================================
+     A <SemReegel> element represents a single normalisation instruction. Normalisation
+    instructions are applied step-by-step, in the order specified by "priority" 
+    attributes;
+    
+     At the beginning of normalisation, it is assumed that each temporal expression is 
+    a DATE/TIME expression (according to the TimeML specification (Ingria et al. 2002)).
+    The instruction SET_attrib (see details from Table 1.) can be used to change the 
+    type of temporal expression;
+    
+     On normalising DATE/TIME expressions, document creation time (DCT) is taken as a 
+    base timepoint (the reference time), and normalisation instructions/operations are 
+    used to transform this timepoint until the aimed semantics are reached;
+     The operation ANCHOR_TIMEX can be used to change the reference time: to anchor the
+    semantics of the expression to some some nearby temporal expression;
+     And operations CREATE_beginPoint and CREATE_endPoint can be used to switch from
+    a single timepoint normalisation to an interval normalisation, providing separate
+    normalisation sequences for beginning and ending points of the interval;
+
+     In following, attributes of <SemReegel> are described in more detail.
+    
+    -------------------------------------------------------------
+     Attributes conditioning the execution of the instruction:
+    -------------------------------------------------------------
+    
+    (*) seotudMustriosa -- specifies the phrase-pattern-matching conditions under which 
+       the instruction will be executed; These conditions are described in terms of 
+       matching/mismatching word templates in the phrase pattern.
+        More specifically, conditions contain space-separated references to word 
+       templates, each reference must be given either by:
+        1) the index of word template in the phrase pattern (starting from 0), or by
+        2) the name of word class used in the phrase pattern;
+        There must be at least one reference, but it is not required that all word 
+       templates in the pattern must be referred to;
+        The symbol "^" at the beginning of the reference specifies that the corresponding 
+       optional word template must be mismatching;
+        ("^" should be combined with the index, not with the name of word class);
+        
+        A normalisation instruction can be constructed dynamically, relying on the 
+       results of matching a word class;
+        If the reference to a word class is surrounded by parenthesis, then the 
+       normalisation instruction is prefilled, using attributes/values from the 
+       corresponding word class element; For example, a normalisation instruction
+       can only define the "op" (operation name), and take attributes-values
+       "semField" (operation's target field) and "semValue" (field's target value) 
+       from the matching word class element;
+        Attributes that can be taken from word class elements: "semField", "op", 
+       "semValue", "semLabel", "direction", "mudel";
+        
+    (*) seotudKontekst -- specifies the phrase-context conditions under which 
+       the instruction will be executed; More specifically, these conditions refer
+       to the results of application of composition rules, or to the results of
+       anchoring; Following conditions can be used:
+       
+        *) KORVALFRAASI_GRAN: gran_1, gran_2, ... , gran_n
+           Requires that the candidate has been joined into a longer phrase by
+           composition rules, and that the joined candidates contain at least
+           one of the temporal granularities listed in:
+                gran_1, gran_2, ... , gran_n
+           
+           ("containment of a temporal granularity" means that the candidate
+            must contains a semantic instruction changing that granularity)
+            
+            Alternatively, the list can also contain references to unwanted 
+           granularities, which must be prefixed by ^;
+           The instruction will be executed only if all the unwanted granularities 
+           are missing from the joined candidates.
+            
+            For possible granularity constants, see:
+           https://raw.githubusercontent.com/soras/Ajavt/master/src/ee/ut/soras/ajavtV2/mudel/ajavaljend/Granulaarsus.java
+
+        *) KORVALFRAAS_PUUDUB
+           Requires that the candidate has NOT been joined into a longer phrase
+           by composition rules. 
+           Still, the phrase is allowed to be joined into temporal interval by 
+           built-in interval joining rules;
+           The condition can be negated using the prefix ^
+        
+        *) ANKRU_GRAN: gran, value
+           Checks whether the anchored candidate (or document creation date if the
+           anchoring has not been performed) has granularity "gran" with value 
+           "value" (specified by a regular expression);
+           The condition can be negated using the prefix ^
+           
+            For possible granularity constants, see:
+           https://raw.githubusercontent.com/soras/Ajavt/master/src/ee/ut/soras/ajavtV2/mudel/ajavaljend/Granulaarsus.java
+           
+        *) ANKURDAMINE_LABIVIIDUD
+           Requires that an ANCHOR_TIMEX instruction has been applied previously
+           and the anchoring has been successful;
+           The condition can be negated using the prefix ^
+        
+        *) NUM_VAHEM_OTSPUNKT_JARGNEB
+           Requires that built-in interval joining rules have been applied and 
+           a numeric endpoint of the interval has been extracted from a position 
+           after the current candidate;
+           Also states that the instruction is for normalising that endpoint;
+
+        *) NUM_VAHEM_OTSPUNKT_EELNEB
+           Requires that built-in interval joining rules have been applied and 
+           a numeric starting point of the interval has been extracted from a 
+           position before the current candidate;
+           Also states that the instruction is for normalising that endpoint;
+        
+    -----------------------------------------------------
+     Attributes describing general semantic operations:
+    -----------------------------------------------------
+    
+    (*) priority -- an integer specifying the order of the instruction;
+        The highest priority value is 0.
+    
+    (*) op -- type of the normalisation operation/instruction; See Table 1 
+        below for a list of possible instruction types and their 
+        descriptions;
+    
+    (*) semField -- temporal field/granularity that will be changed by
+        the instruction; A constant, possible values:
+            https://raw.githubusercontent.com/soras/Ajavt/master/src/ee/ut/soras/ajavtV2/mudel/ajavaljend/Granulaarsus.java
+        Depending on the operation, some specific formats can also be used;
+    
+    (*) semValue -- a value to be associated with the semantic granularity
+        (semField); The value can have following formats/types:
+            *) An integer value;
+            *) A date format (MM.DD) or time format (hh:mm);
+            *) A date interval (MM1.DD1-MM2.DD2) or time interval (hh1:mm1-hh2:mm2);
+            *) A dateTime constant (e.g. MONDAY) or a range of dateTime constants
+               (e.g. MONDAY-FRIDAY);
+               See the method "parseValueFromConstant()" in
+                   https://raw.githubusercontent.com/soras/Ajavt/master/src/ee/ut/soras/ajavtV2/util/SemDefValjadeParsija.java
+               for details about possible dateTime constants;
+            *) PARSE_FROM_SELF:     group_index
+               Assumes that "seotudMustriosa" refers to a regular expression based word 
+               template, and fetches the value from a captured group (with "group_index") 
+               of that regular expression;
+            *) PARSE_FROM_NUMERAL:  group_index
+               Assumes that "seotudMustriosa" refers to a regular expression based word 
+               template, fetches a string from a captured group (with "group_index") of 
+               that regular expression, converts it from a numeral word to the 
+               corresponding integer or float, and (if the conversion succeeds) takes it 
+               as the value;
+            *) REF:       group_index
+               Used within a word class element, a regular expression or a numeral phrase,
+               to guide that the value should be taken from a captured group in the match
+               (the group referred by "group_index"), or from the converted numeral phrase
+               (in such case, "group_index" should be 1 by default);
+            *) REF_VAL:   word_class_name
+               The value is taken from a semValue part of the word class ("word_class_name");
+               Must refer to a word class that has matched the candidate;
+            *) REF_LAB:   word_class_name
+               The value is taken from a semLabel part of the word class ("word_class_name");
+               Must refer to a word class that has matched the candidate;
+    
+    (*) semLabel -- a label to be associated with the semantic granularity. Must be one
+        of the TimeML labels (e.g. a label referring to part of day or a season);
+        
+    ------------------------------------------------------
+     Attributes describing specific semantic operations:
+    ------------------------------------------------------
+    
+    (*) direction -- an integer value indicating the direction of the seek-operations 
+        (SEEK, FIND_NTH_SUBGRAN): See the Table 1 for details;
+    
+    (*) explicitPoint -- in operations CREATE_beginPoint and CREATE_endPoint, specifies
+        whether the created timepoint should be annotated as a TIMEX tag with textual 
+        content (explicitPoint="true") or as an empty TIMEX tag (explicitPoint="false");
+    
+    (*) attrib -- in operation SET_attrib, refers to name of the TimeML TIMEX attribute 
+        that must be set; Mostly used for setting attributes "type" (if type switching 
+        is required), "mod" and "temporalFunction";
+
+
+---------------------------------
+   Table 1: Types of             
+   normalisation instructions    
+---------------------------------
+
+====================== ===================================== =====================================
+Instruction/Operation  Functions of the attributes           Description
+====================== ===================================== =====================================
+ SET                   semField = the calendar field to be   Overwrites the given calendar field
+                                  changed;                   (semField) with the given value
+                       semValue = the value to be set to     (semValue);
+                                  the field;                 
+---------------------- ------------------------------------- -------------------------------------
+ ADD                   semField = the calendar field which   Increases or decreases the given 
+                                  value is to be increased/  calendar field (semField) by amount
+                                  decreased;                 of given value (semValue);
+ SUBTRACT              semValue = the amount of increase/    
+                                  decrease;                  
+
+---------------------- ------------------------------------- -------------------------------------
+ SEEK                  semField = the calendar field upon    Seeks the calendar field (semField) 
+                                  which the seek operation   for the value (semValue) from the
+                                  is performed;              given direction starting from the 
+                       direction = the direction of the      reference time. If SEEK is used, the
+                                   seek, possible values:    reference time itself cannot be the
+                                -1 = backward in time;       target time. In case of SEEK_IN, the 
+ SEEK_IN                        +1 = forward in time;        reference time itself can also be
+                                VERBI_AEG = the direction    the target.
+                                is determined by the         If the direction is set to VERBI_AEG,
+                                grammatical tense of the     but a tensed verb won't be found from
+                                nearest verb;                the sentence, the operation falls
+                       semValue = the value to be sought on  back to a SET operation with the
+                                  the calendar field;        same attributes;
+
+---------------------- ------------------------------------- -------------------------------------
+ BALDWIN_WINDOW        semField = the calendar field upon    On given calendar field (semField),
+                                  which the search is        creates a window of unique calendar
+                                  performed;                 values around the reference time,
+                       semValue = the value to be sought on  and picks the time (semValue) 
+                                  the calendar field;        amongst these values;
+                                                             
+                                                             This is a generalised version of the 
+                                                             Baldwin's window algorithm described
+                                                             by (Mazur & Dale, 2008): in addition
+                                                             to calendar field DAY_OF_WEEK, the
+                                                             operation can also be performed on
+                                                             MONTH and YEAR_OF_CENTURY fields;
+
+---------------------- ------------------------------------- -------------------------------------
+ FIND_NTH_SUBGRAN      semField = a pair in the form         Finds N-th calendar value (semValue)
+                                  calendarField:subField;    from within the calendar field
+                                  currently implemented      (semField); 
+                                  pairs:                     In case semField="MONTH:DAY_OF_WEEK",
+                                   MONTH:DAY_OF_WEEK         N-th day of week within month is
+                                   MONTH:WEEK_OF_YEAR        sought. And in case of
+                       direction = the variable N            semField="MONTH:WEEK_OF_YEAR", N-th
+                       semValue = the N-th value to be       week of month is sought, assuming
+                                  sought on the calendar     that first or last week of month 
+                                  field;                     should contain first or last day of 
+                                                             week, as given in semValue;
+
+---------------------- ------------------------------------- -------------------------------------
+ SET_attrib            attrib = name of the TIMEX3 attribute Sets the value of given TIMEX3       
+                                to be changed;               attribute to the given string        
+                       semValue = the new (string) value     (semValue);                          
+                                  for the attribute;                                              
+                                                             Specifics:                        
+                                                             *) If attrib="type", switches from   
+                                                                the construction of a timepoint to
+                                                                the construction of a duration or 
+                                                                set (e.g. attrib="type"           
+                                                                          semValue="DURATION" or 
+                                                                          attrib="type" and 
+                                                                          semValue="RECURRENCE");
+                                                                                                  
+                                                             *) If attrib="value", the current    
+                                                                value, even if obtained by        
+                                                                calculations, will be overwritten
+                                                                with the new string;
+
+---------------------- ------------------------------------- -------------------------------------
+ COVER_VAL             semField = the calendar field to be   Covers a number of positions on the  
+                                  modified;                  given calendar field (starting from  
+                       semValue = number of positions to     the right) with 'X' symbols;         
+                                  be covered;                
+
+---------------------- ------------------------------------- -------------------------------------
+ CREATE_beginPoint     explicitPoint = a boolean indicating  Switches from construction of    
+                            whether the created timepoint    single timepoint to construction 
+                            should be annotated as a TIMEX   of a starting point of an interval   
+                            tag with textual content         (CREATE_beginPoint) or to         
+                            (explicitPoint="true") or as an  construction of an ending point of an
+ CREATE_endPoint            empty TIMEX tag                  interval (CREATE_endPoint).           
+                            (explicitPoint="false");         If the timepoint has already been
+                                                             modified before CREATE_beginPoint,
+                                                             the modified version is taken as 
+                                                             basis both in CREATE_beginPoint and
+                                                             CREATE_endPoint;
+                                                             Starting and ending points will be
+                                                             annotated as separate TIMEX-es;
+
+---------------------- ------------------------------------- -------------------------------------
+ SET_HALVING_POINT     semValue = index,boolean, where       If two explicit timepoint annotations
+                                  index refers to word       are created (with CREATE_beginPoint
+                                  index in the phrase        and CREATE_endPoint), marks a point
+                                  pattern after which the    in the phrase pattern at which the 
+                                  phrase will be broken,     candidate is broken into two
+                                  and the boolean marks,     separate TIMEX annotations;
+                                  whether the index word     
+                                  is included in starting    
+                                  point or not;              
+
+---------------------- ------------------------------------- -------------------------------------
+ ANCHOR_TIMEX          direction = the direction relative    From before (direction="-1") or after
+                           the current TIMEX in text from    (direction="1") the current 
+                           which the anchor TIMEX should     expression, finds first temporal 
+                           be sought:                        expression candidate that satisfies
+                            -1 seek before the current       the granularity requirement (alters
+                               expression;                   the field semField in normalisation)
+                             1 seek after the current        and anchors semantics of the current
+                               expression;                   expression to this candidate;
+                       semField = the calendar field that    In case of successful anchoring, 
+                           the anchor TIMEX is required to   all subsequent normalisation 
+                           have; Can also be a comma         operations will be applied on (a
+                           separated list of fields, in      copy of) the anchor timepoint.
+                           this case, only one of the 
+                           listed fields must be present;
+
+====================== ===================================== =====================================
+
+
+=================================
+   References
+=================================
+ Ingria B., Pustejovsky J., Gaizauskas R., Katz G., Latto A., Mani I., Rauch E. et al. 
+ (2002). TimeML: A formal specification language for events and temporal expressions.
+  ( url: http://www.timeml.org/site/publications/timeMLdocs/timeml_1.2.1.html )
+
+ Mazur, P., and Dale, R. (2008). What's the date?: high accuracy interpretation of weekday 
+ names. Proceedings of the 22nd International Conference on Computational 
+ Linguistics-Volume 1. Association for Computational Linguistics.
+
+ Orasmaa, S. (2010). Ajaväljendite tuvastamine eestikeelses tekstis 
+ (Recognition and Resolution of Estonian Temporal Expressions). Master’s 
+ thesis, University of Tartu. (in Estonian).
+  ( url: http://comserv.cs.ut.ee/forms/ati_report/downloader.php?file=F0E53012D5F88F71DD6E2E84830460F334E14EA2 )
+  
+  

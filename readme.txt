@@ -64,7 +64,7 @@
      -- PyVabamorf:          https://github.com/estnltk/pyvabamorf
      -- T3MESTA (a commercial morphological analyzer)
      (NB! The program also works on morphologically ambiguous input, 
-      but the quality of the analysis is expected to be worse than 
+      but the quality of the analysis is expected to be lower than 
       on the morphologically disambiguated text.)
  
 
@@ -344,7 +344,8 @@
   ------------------
   The Ajavt project has following directory structure:
   
-  [doc]                            <--- documentation about the annotation format; 
+  [doc]                            <--- documentation about the annotation format
+                                        and about format of the rules file;  
 
   [lib]                            <--- Java dependencies of the program;
 
