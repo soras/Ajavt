@@ -4,14 +4,13 @@
 =========================================
 =========================================
  
-   Most of the processing logic of Ajavt -- from the patterns that guide the extraction 
-  of temporal expressions to the instructions used for normalising semantics of the 
-  expressions -- is described in an XML format rules file.
+   A large part of the processing logic of Ajavt -- from the patterns that guide the 
+  extraction of temporal expressions to the instructions used for normalising semantics 
+  of the expressions -- is described in an XML format rules file.
    The default set of rules (developed for processing news texts) can be found from file 
   "reeglid.xml", the same file also contains DTD for the XML document.
    Here, we give a brief overview about the structure and semantics of the rules.
-   A detailed overview on the system and its processing logic can be found from 
-  (Orasmaa 2010).
+   A detailed overview on the system can be found from (Orasmaa 2010).
 
 =================================
    Basic  structure
@@ -21,6 +20,9 @@
       which guide how temporal expression candidates should be extracted from text. The 
       basic extraction rules also contain instructions for normalising semantics of the 
       candidate expressions (<SemReegel> elements);
+      In principle, a fully functional set of rules can also be created using only the 
+      basic extraction rules; however, using word classes and composition rules allows 
+      to make rule representation more compact;
   Word classes (<SonaKlass> elements within <SonaKlassid> tags) specify reusable parts 
       of the basic extraction rules, e.g. a list of all month names can be defined 
       as a word class, so it can be reused in multiple basic extraction rules;
@@ -45,7 +47,7 @@
        used to guide how phrases should be joined into longer phrases in composition
        rules;
 
-    The process more technically:
+    The tagging process more technically:
     After the phrase pattern (within <Muster> tags) has matched with a sequence of 
     tokens, a candidate temporal expression will be extracted. In subsequent steps, this 
     candidate can be removed by morphological constraints (tag <Filter>), by negative 
@@ -64,18 +66,13 @@
    <Muster> tags. Token descriptions aka word templates should be separated by spaces.
    Following types of word templates can be used:
 
-   1) basic text -- case insensitive surface form of the word. 
-      Example: the pattern 
-        <Muster> 'täna' </Muster>
-      matches only the token 'täna' in case insensitive manner;
-
-   2) regular expression -- matches the word token by a regular expression (based on
+   1) regular expression -- matches the word token by a regular expression (based on
       java.util.regex.Pattern);
       Example: the pattern
         <Muster> /(sündinud|s|snd|sünd)/ </Muster>
       matches tokens 'sündinud', 's', 'snd' and 'sünd';
 
-   3) word lemma -- matches the word token by its lemma (based on morphological 
+   2) word lemma -- matches the word token by its lemma (based on morphological 
       analysis).
       Example: the pattern
         <Muster> |esmaspäev| </Muster>
@@ -86,7 +83,7 @@
       Filosoft's part-of-speech tags are assumed 
       ( http://www.filosoft.ee/html_morf_et/morfoutinfo.html#2 );
 
-   4) word class -- matches one word from a class of words defined in within 
+   3) word class -- matches one word from a class of words defined in within 
       <SonaKlassid> tags; Name of the word class is conventionally given in 
       uppercase letters;
       Example: the pattern
@@ -131,9 +128,9 @@
   Within each element, both extraction part and normalisation parts are specified.
   Attributes related to extraction part are:
     *) tyyp -- type of the word template, one of the following:
+        "tekst"   -- basic text (case insensitive);
         "algv"    -- word lemma;
         "reg"     -- regular expression;
-        "tekst"   -- basic text;
         "arvSona" -- numeral phrase;
         "eriArv"  -- special numeral;
     *) vaartus -- string of the word template: a lemma in case of tyyp="algv",
@@ -343,7 +340,7 @@
     attributes;
     
      At the beginning of normalisation, it is assumed that each temporal expression is 
-    a DATE/TIME expression (according to the TimeML specification (Ingria et al. 2002)).
+    a DATE/TIME expression (according to the TimeML specification (Ingria et al. 2005)).
     The instruction SET_attrib (see details from Table 1.) can be used to change the 
     type of temporal expression;
     
@@ -351,10 +348,11 @@
     base timepoint (the reference time), and normalisation instructions/operations are 
     used to transform this timepoint until the aimed semantics are reached;
      The operation ANCHOR_TIMEX can be used to change the reference time: to anchor the
-    semantics of the expression to some some nearby temporal expression;
+    semantics of the expression to the semantics of some nearby temporal expression;
      And operations CREATE_beginPoint and CREATE_endPoint can be used to switch from
     a single timepoint normalisation to an interval normalisation, providing separate
-    normalisation sequences for beginning and ending points of the interval;
+    sequences of normalisation instructions for beginning and ending points of the 
+    interval;
 
      In following, attributes of <SemReegel> are described in more detail.
     
@@ -639,11 +637,42 @@ Instruction/Operation  Functions of the attributes           Description
 ====================== ===================================== =====================================
 
 
+    -------------------------------------------------------------
+      An example of a full basic extraction rule                
+    -------------------------------------------------------------
+
+    Word classes used by the rule:
+    
+        <!--   word class for capturing "ago"-like postpositions  -->
+        <SonaKlass nimi="TAGASI_EEST_TAGUNE">
+            <Element tyyp="algv" vaartus="tagune" />
+            <Element tyyp="algv" vaartus="tagasi" />
+            <Element tyyp="algv" vaartus="eest"   />
+        </SonaKlass>
+        
+        <!--   word class for capturing numbers in a small range, from 0 to 599  -->
+        <SonaKlass nimi="ARV_LOENDA_VAIKE_A">
+            <Element tyyp="reg"     vaartus="([0-5]?[0-9]?[0-9])-?(n)?(da)?(t|sse|le|ks|ta|s|l|ni|ga|st|lt|na)?" semValue="REF:1" />
+            <Element tyyp="arvSona" arvuPiirang="0-599" arvuLiik="_N_|_F_"                                       semValue="REF:1" />
+        </SonaKlass>
+        
+    The basic extraction rule:
+    
+        <Reegel>
+            <Muster> ARV_LOENDA_VAIKE_A  |aasta|  TAGASI_EEST_TAGUNE </Muster>
+            <SemReegel priority="1" seotudMustriosa="ARV_LOENDA_VAIKE_A" op="SUBTRACT" semField="YEAR" />
+        </Reegel>
+  
+    
+    This rule captures expressions such as "viis aastat tagasi" (five years ago), "10 aasta tagune" (10 years ago) etc.
+
+
+
 =================================
    References
 =================================
  Ingria B., Pustejovsky J., Gaizauskas R., Katz G., Latto A., Mani I., Rauch E. et al. 
- (2002). TimeML: A formal specification language for events and temporal expressions.
+ (2005). TimeML: A formal specification language for events and temporal expressions.
   ( url: http://www.timeml.org/site/publications/timeMLdocs/timeml_1.2.1.html )
 
  Mazur, P., and Dale, R. (2008). What's the date?: high accuracy interpretation of weekday 
