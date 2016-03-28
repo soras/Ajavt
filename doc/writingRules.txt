@@ -20,9 +20,9 @@
       which guide how temporal expression candidates should be extracted from text. The 
       basic extraction rules also contain instructions for normalising semantics of the 
       candidate expressions (<SemReegel> elements);
-      In principle, a fully functional set of rules can also be created using only the 
-      basic extraction rules; however, using word classes and composition rules allows 
-      to make rule representation more compact;
+      In principle, a fully functional set of rules can be created using only the basic 
+      extraction rules; however, using word classes and composition rules allows to 
+      make rule representation more compact;
   Word classes (<SonaKlass> elements within <SonaKlassid> tags) specify reusable parts 
       of the basic extraction rules, e.g. a list of all month names can be defined 
       as a word class, so it can be reused in multiple basic extraction rules;
@@ -125,7 +125,8 @@
   contained within the class. The word class matches with a token if at least one 
   of these elements matches the token;
   
-  Within each element, both extraction part and normalisation parts are specified.
+  Within each element, both extraction part and normalisation parts can be specified.
+  (the extraction part is mandatory, and the normalisation part optional)
   Attributes related to extraction part are:
     *) tyyp -- type of the word template, one of the following:
         "tekst"   -- basic text (case insensitive);
@@ -289,6 +290,8 @@
        <LiitumisReegel tase="FRAAS"> A D </LiitumisReegel>
        specifies that consecutive candidates, one with label A and other with label D,
        will be joined together (regardless which one of them comes first);
+   The current implementation only supports binary composition rules: the rule should 
+   give exactly two candidates that need to be joined.
     
     Attribute "tase" specifies the level of joining (a phrase or a temporal interval). 
    Currently, only the phrase level is supported ("FRAAS");
@@ -325,7 +328,7 @@
      <LiitumisReegel tase="FRAAS"> A D </LiitumisReegel>
     
     This specifies to join phrase candidates 'järgmise nädala' and 'esmaspäeval' 
-   (on next week + Monday) if these phrases appear consecutively;
+   (on next week's + Monday) if these phrases appear consecutively;
     
     How the semantics are resolved in case of the joining is specified under the
    normalisation instructions.
@@ -396,7 +399,7 @@
                 gran_1, gran_2, ... , gran_n
            
            ("containment of a temporal granularity" means that the candidate
-            must contains a semantic instruction changing that granularity)
+             contains a semantic instruction changing that granularity)
             
             Alternatively, the list can also contain references to unwanted 
            granularities, which must be prefixed by ^;
@@ -455,8 +458,10 @@
             https://raw.githubusercontent.com/soras/Ajavt/master/src/ee/ut/soras/ajavtV2/mudel/ajavaljend/Granulaarsus.java
         Depending on the operation, some specific formats can also be used;
     
-    (*) semValue -- a value to be associated with the semantic granularity
-        (semField); The value can have following formats/types:
+    (*) semValue -- the value indicating the desired change (which value of the semField 
+        needs to be reached), or the amount of change (on given semField);
+        Exact semantics depend on the operation;
+        The value can have following formats/types:
             *) An integer value;
             *) A date format (MM.DD) or time format (hh:mm);
             *) A date interval (MM1.DD1-MM2.DD2) or time interval (hh1:mm1-hh2:mm2);
@@ -557,7 +562,7 @@ Instruction/Operation  Functions of the attributes           Description
 ---------------------- ------------------------------------- -------------------------------------
  FIND_NTH_SUBGRAN      semField = a pair in the form         Finds N-th calendar value (semValue)
                                   calendarField:subField;    from within the calendar field
-                                  currently implemented      (semField); 
+                                  currently implemented      (semField);
                                   pairs:                     In case semField="MONTH:DAY_OF_WEEK",
                                    MONTH:DAY_OF_WEEK         N-th day of week within month is
                                    MONTH:WEEK_OF_YEAR        sought. And in case of
@@ -650,7 +655,7 @@ Instruction/Operation  Functions of the attributes           Description
             <Element tyyp="algv" vaartus="eest"   />
         </SonaKlass>
         
-        <!--   word class for capturing numbers in a small range, from 0 to 599  -->
+        <!--   word class for capturing numbers and numeral words representing a small range, from 0 to 599  -->
         <SonaKlass nimi="ARV_LOENDA_VAIKE_A">
             <Element tyyp="reg"     vaartus="([0-5]?[0-9]?[0-9])-?(n)?(da)?(t|sse|le|ks|ta|s|l|ni|ga|st|lt|na)?" semValue="REF:1" />
             <Element tyyp="arvSona" arvuPiirang="0-599" arvuLiik="_N_|_F_"                                       semValue="REF:1" />
@@ -659,12 +664,24 @@ Instruction/Operation  Functions of the attributes           Description
     The basic extraction rule:
     
         <Reegel>
-            <Muster> ARV_LOENDA_VAIKE_A  |aasta|  TAGASI_EEST_TAGUNE </Muster>
-            <SemReegel priority="1" seotudMustriosa="ARV_LOENDA_VAIKE_A" op="SUBTRACT" semField="YEAR" />
+            <Muster> ARV_LOENDA_VAIKE_A?  |aasta|  TAGASI_EEST_TAGUNE </Muster>
+            <Filter morfTunnused="_ {sg} _">
+                <!-- 1) semantics of singular: subtract the given number of years from the reference date -->
+                <SemReegel priority="1" seotudMustriosa="ARV_LOENDA_VAIKE_A" op="SUBTRACT" semField="YEAR" />
+                <!-- 2) semantics of singular: if the number of years is unspecified, subtract one year 
+                        from the reference date -->
+                <SemReegel priority="1" seotudMustriosa="^0 1"               op="SUBTRACT" semField="YEAR" semValue="1" />
+            </Filter>
+            <Filter morfTunnused="_ {pl} _">
+                <!-- semantics of plural: a vague reference to the past  -->
+                <SemReegel priority="1" seotudMustriosa="1" op="SET_attrib" attrib="value" semValue="PAST_REF"  />
+            </Filter>
         </Reegel>
   
     
-    This rule captures expressions such as "viis aastat tagasi" (five years ago), "10 aasta tagune" (10 years ago) etc.
+    captures both concrete past references, such as "viis aastat tagasi" (five years ago), "10 aasta tagune" 
+    (10 years ago), and  also vague year level past references, such as "aastate tagune" / "aastaid tagasi" 
+    (years ago).
 
 
 

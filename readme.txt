@@ -423,6 +423,10 @@
   Dependency libraries have their own respective license terms, see 
   "lib/LIB_LICENSES.txt" for details.
 
+  Development of this tool has been supported by the National Programme 
+  for Estonian Language Technology under projects EKKTT09-66, EKT7 and 
+  EKT57.
+  
 ============================
    References
 ============================
