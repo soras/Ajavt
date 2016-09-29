@@ -1,5 +1,5 @@
 //  Ajavt: Temporal Expression Tagger for Estonian
-//  Copyright (C) 2009-2015  University of Tartu
+//  Copyright (C) 2009-2016  University of Tartu
 //  Author:   Siim Orasmaa
 //  Contact:  siim . orasmaa {at} ut . ee
 //  
@@ -18,9 +18,7 @@ package ee.ut.soras.ajavtV2;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +34,7 @@ import ee.ut.soras.ajavtV2.mudel.TuvastamisReegel;
 import ee.ut.soras.ajavtV2.mudel.ajavaljend.AjavaljendiKandidaat;
 import ee.ut.soras.ajavtV2.mudel.ajavaljend.AjavaljendiKandidaat.ASTE;
 import ee.ut.soras.ajavtV2.mudel.ajavaljend.LiitumisReegel;
+import ee.ut.soras.ajavtV2.mudel.ajavaljend.PotentsLiidetavateKandidaatideJada;
 import ee.ut.soras.ajavtV2.mudel.ajavaljend.SemantikaDefinitsioon;
 import ee.ut.soras.ajavtV2.mudel.ajavaljend.arvutus.SemLeidmiseMudel;
 import ee.ut.soras.ajavtV2.mudel.ajavaljend.arvutus.SemLeidmiseMudelImpl3;
@@ -45,7 +44,6 @@ import ee.ut.soras.ajavtV2.mudel.sonamallid.SonaKlass;
 import ee.ut.soras.ajavtV2.mudel.sonamallid.SonaMall;
 import ee.ut.soras.ajavtV2.util.LogiPidaja;
 import ee.ut.soras.ajavtV2.util.MustridXMLFailist;
-import ee.ut.soras.ajavtV2.util.TextUtils;
 import ee.ut.soras.wrappers.EstyhmmWrapper;
 import ee.ut.soras.wrappers.impl.EstyhmmWrapperImpl;
 
@@ -64,10 +62,11 @@ import ee.ut.soras.wrappers.impl.EstyhmmWrapperImpl;
  *      <li><code>lahendaYlekattedAjavaljenditeVahelJaRakendaNegMustreid</code> - kui suurem ajavaljend katab taielikult yle
  *          vaiksema, siis vaiksem eemaldatakse. Samuti eemaldatakse ajavaljendid, mille negatiivsed mustrid leiavad 
  *          rahuldamist;</li>
- *      <li><code>liidaKorvutiseisvadAjavaljendiFraasid</code> - liidab (voimalusel) korvutiseisvad eraldatud ajavaljendid
+ *      <li><code>liidaKorvutiseisvadAjavaljendiFraasid2</code> - liidab (voimalusel) korvutiseisvad eraldatud ajavaljendid
  *          yheks valjendiks (nt <i>kell 12 + hommikul, 1999 + juunis</i>); Kui mitte-eraldiseisev kandidaat ei l2bi
  *          liitumisprotsessi, eemaldatakse see yldse (nt eemaldatakse <i>umbes</i>, kui sellele ei j2rgne nt kandidaat
- *          <i>kell pool kolm</i> ). Liitmine toimub liitumisreeglite alusel;</li>
+ *          <i>kell pool kolm</i> ). Samuti eemaldatakse liitmisel saadud pikema kandidaadi poolt t2ielikult ylekaetud
+ *          kandidaadid; Liitmine toimub liitumisreeglite alusel;</li>
  *      <li><code>eraldaAjavahemikudJaLiidaFraasiks</code> - leiab, millised korvutiseisvaist ajavaljendeist voivad
  *          moodustada semantika poolest ajavahemiku ning liidab need kokku yheks semantiliseks ajavaljendiks;
  *          Kasutab sisseehitatud heuristikuid ajavahemike leidmiseks; </li>               
@@ -81,7 +80,7 @@ import ee.ut.soras.wrappers.impl.EstyhmmWrapperImpl;
  */
 public class AjaTuvastaja {
 
-	final private static String versioon = "2015-11-02_01";
+	final private static String versioon = "2016-09-29_01";
 	
 	private LogiPidaja logi;
 
@@ -186,7 +185,8 @@ public class AjaTuvastaja {
 		// --------------------------------------------------------------------
 		this.eraldaAjavaljendiKandidaadid(sonad);
 		this.lahendaYlekattedAjavaljenditeVahelJaRakendaNegMustreid(sonad);		
-		this.liidaKorvutiseisvadAjavaljendiFraasid(sonad);
+		//this.liidaKorvutiseisvadAjavaljendiFraasid(sonad);
+		this.liidaKorvutiseisvadAjavaljendiFraasid2(sonad);
 		this.eraldaAjavahemikudJaLiidaFraasiks(sonad);
 		
 		//this.koondaRinnastusSeosesOlevadAjavYhtseSemantikaAlla(sonad);
@@ -279,7 +279,8 @@ public class AjaTuvastaja {
 		// --------------------------------------------------------------------
 		this.eraldaAjavaljendiKandidaadid(sonad);
 		this.lahendaYlekattedAjavaljenditeVahelJaRakendaNegMustreid(sonad);		
-		this.liidaKorvutiseisvadAjavaljendiFraasid(sonad);
+		//this.liidaKorvutiseisvadAjavaljendiFraasid(sonad);
+		this.liidaKorvutiseisvadAjavaljendiFraasid2(sonad);
 		this.eraldaAjavahemikudJaLiidaFraasiks(sonad);
 		
 		(this.mudel).leiaSemantika(sonad, konehetk);
@@ -399,7 +400,8 @@ public class AjaTuvastaja {
 
 		this.eraldaAjavaljendiKandidaadid(sonad);
 		this.lahendaYlekattedAjavaljenditeVahelJaRakendaNegMustreid(sonad);		
-		this.liidaKorvutiseisvadAjavaljendiFraasid(sonad);
+		//this.liidaKorvutiseisvadAjavaljendiFraasid(sonad);
+		this.liidaKorvutiseisvadAjavaljendiFraasid2(sonad);
 		this.eraldaAjavahemikudJaLiidaFraasiks(sonad);
 		
 		(this.mudel).leiaSemantika(sonad, konehetk);
@@ -489,7 +491,8 @@ public class AjaTuvastaja {
 
 		this.eraldaAjavaljendiKandidaadid(sonad);
 		this.lahendaYlekattedAjavaljenditeVahelJaRakendaNegMustreid(sonad);		
-		this.liidaKorvutiseisvadAjavaljendiFraasid(sonad);
+		//this.liidaKorvutiseisvadAjavaljendiFraasid(sonad);
+		this.liidaKorvutiseisvadAjavaljendiFraasid2(sonad);
 		this.eraldaAjavahemikudJaLiidaFraasiks(sonad);
 		
 		(this.mudel).leiaSemantika(sonad, konehetk);
@@ -653,209 +656,79 @@ public class AjaTuvastaja {
 	//==============================================================================
 	
 	/**
-	 *  5) Liidab korvutiseisvad ajavaljendikandidaadid liitmisreeglite alusel 
-	 *  fraasideks. Eemaldab ajavaljendikandidaadid, mis on margitud mitte-eraldiseisvaks ning
-	 *  mille k6rval ei leidu yhtki teist & eraldiseisvat ajavaljendikandidaati.
+	 *  5) (UUS-LOOGIKA) Liidab korvutiseisvad ajavaljendikandidaadid liitmisreeglite alusel 
+	 *  fraasideks. Tehnilisemalt: yhendab k6rvutiseisvad, MUSTER-tyypi, kandidaadid 
+	 *  FRAAS-tyypi kandidaatideks.
 	 *  <p>
-	 *  Yhendab k6rvutiseisvad, MUSTER-tyypi, kandidaadid FRAAS-tyypi kandidaatideks.
+	 *  Eemaldab ajavaljendikandidaadid, mis on margitud mitte-eraldiseisvaks ning
+	 *  mille k6rval ei leidu yhtki teist & eraldiseisvat ajavaljendikandidaati. Samuti 
+	 *  eemaldab yksikud (FRAAS-iks mitteyhendatud) kandidaadid, mis j22vad t2ielikult mingi
+	 *  FRAAS-tyypi kandidaadi sisse;
+	 *  <p>
 	 */
-	private void liidaKorvutiseisvadAjavaljendiFraasid(List<AjavtSona> sonad){
+	private void liidaKorvutiseisvadAjavaljendiFraasid2(List<AjavtSona> sonad) throws Exception {
+		List<PotentsLiidetavateKandidaatideJada> jadad = null;
 		if (this.liitumisReeglid != null){
-			//
-			// A) Eraldame sobivad liitumisreeglid ja valmistame ette;
-			//
-			List<LiitumisReegel> fraasiksLiitumisReeglid = 
-					filtreeriEtteantudAstmegaLiitumisReeglid(ASTE.YHENDATUD_FRAASINA);
-			HashMap<String, String> vabaJarjekorragaPaarid = 
-					eraldaLubatudTahistePaarid(fraasiksLiitumisReeglid, true);
-			HashMap<String, String> fikseeritudJarjekorragaPaarid = 
-				eraldaLubatudTahistePaarid(fraasiksLiitumisReeglid,    false);
-			// Jooksvalt moodustatav fraas: 				
-			List<AjavtSona> liitFraas = new ArrayList<AjavtSona>();
-			// Jooksvalt moodustatav fraas sisaldab rohkem kui yht valjendit:				
-			boolean rohkemKuiYksAjav  				= false;
-			// Jooksvalt viimane ajav2ljend oli mitteeraldiseisev
-			boolean viimaneAjavOliMitteEraldiseisev = false;
-			// Milliseid t2hiseid on liitmisel juba kasutatud:
-			HashMap<String, String> kasutatudTahised = new HashMap <String, String> ();
-			//
-			// B) Labime teksti s6na-s6na haaval; 
-			//    Teostame k6rvutiseisvate kandidaatide liitmise ning
-			//    mitteeraldiseisvate kandidaatide eemaldamise;
-			//
-			for (int i = 0; i < sonad.size(); i++) {
-				AjavtSona sona = sonad.get(i);
-				if (sona.onSeotudMoneAjavaljendiKandidaadiga()){
-					List<FraasisPaiknemiseKoht> ajavaljendiFraasides = sona.getAjavaljendiKandidaatides();
-					if (ajavaljendiFraasides.size() == 1){
-						AjavaljendiKandidaat kaesolevAjav = (sona.getAjavaljendiKandidaadid()).get(0);
-						if (!liitFraas.isEmpty() &&
-								((ajavaljendiFraasides.get(0)) == FraasisPaiknemiseKoht.AINUSSONA ||
-										(ajavaljendiFraasides.get(0)) == FraasisPaiknemiseKoht.ALGUSES )){
-								AjavaljendiKandidaat eelmineAjav  = (liitFraas.get(liitFraas.size()-1)).getAjavaljendiKandidaadid().get(0);
-								//
-								// 1) Ei luba yhendada kui:
-								//      -- ajav2ljendite vahelt jookseb lausepiir;
-								//
-								AjavtSona eelmineSona = (eelmineAjav.getFraas()).get((eelmineAjav.getFraas()).size()-1);
-								if (eelmineSona.onLauseLopp()){
-									//
-									// - rohkem yhendada ei saa, nii 8elda "t6mbame fraasi kokku"
-									//
-									if (rohkemKuiYksAjav){
-										AjavaljendiKandidaat ajav = new AjavaljendiKandidaat();
-										ajav.setAste(ASTE.YHENDATUD_FRAASINA);
-										ajav.votaAntudSonadegaSeotudKandidaadidAlamkandidaatideks(liitFraas);
-										AjaTuvastaja.seoSonadKandidaadiKylge(ajav, liitFraas);
-										rohkemKuiYksAjav = false;
-									} else {
-										// - Oli vaid yks ajavaljend ning seegi mitteeraldiseisev
-										if (viimaneAjavOliMitteEraldiseisev){
-											// siis eemaldame selle ajavaljendi s6nade kyljest ...
-											eelmineAjav.eemaldaEnnastSonadeKyljest();
-										}
-									}
-									// Kui yhendada ei saa, katkestame liitfraasi konstrueerimise
-									liitFraas.clear();
-									kasutatudTahised.clear();
-									viimaneAjavOliMitteEraldiseisev = false;										
-								} else {
-								//
-								// 2) Kui m6lemad on eraldiseisvad ajavaljendid, kontrollime yhendamisk6lbulikkust
-								//
-								// liitumisreeglite abil 
-									boolean voibYhendada = false;
-									for (int j = 0; j < liitFraas.size(); j++) {
-										eelmineAjav  = (liitFraas.get(j)).getAjavaljendiKandidaadid().get(0);
-										if (eelmineAjav.voibYhendadaMustriTahisteJargi(
-														kaesolevAjav, 
-														vabaJarjekorragaPaarid,
-														kasutatudTahised,
-														false, 
-														(j == liitFraas.size()-1)) ||
-											eelmineAjav.voibYhendadaMustriTahisteJargi(
-														kaesolevAjav, 
-														fikseeritudJarjekorragaPaarid,
-														kasutatudTahised,
-														true, 
-														(j == liitFraas.size()-1))) {
-											voibYhendada = true;
-										}
-									}
-									if (voibYhendada){
-										rohkemKuiYksAjav = true;
-									} else {
-										// - rohkem yhendada ei saa, nii 8elda "t6mbame fraasi kokku"									
-										if (rohkemKuiYksAjav){
-											AjavaljendiKandidaat ajav = new AjavaljendiKandidaat();
-											ajav.setAste(ASTE.YHENDATUD_FRAASINA);
-											ajav.votaAntudSonadegaSeotudKandidaadidAlamkandidaatideks(liitFraas);
-											AjaTuvastaja.seoSonadKandidaadiKylge(ajav, liitFraas);
-											rohkemKuiYksAjav = false;	
-										} else {
-											// - Oli vaid yks ajavaljend ning seegi mitteeraldiseisev
-											if (viimaneAjavOliMitteEraldiseisev){
-												// siis eemaldame selle ajavaljendi s6nade kyljest ...
-												eelmineAjav  = (liitFraas.get(liitFraas.size()-1)).getAjavaljendiKandidaadid().get(0);
-												eelmineAjav.eemaldaEnnastSonadeKyljest();
-											}
-										}
-										// Kui yhendada ei saa, katkestame liitfraasi konstrueerimise
-										liitFraas.clear();
-										kasutatudTahised.clear();
-										voibYhendada = false;
-										viimaneAjavOliMitteEraldiseisev = false;											
-									}
-								}
-						}
-						viimaneAjavOliMitteEraldiseisev = kaesolevAjav.isPoleEraldiseisevAjavaljend();
-						liitFraas.add(sona);
-					} else {
-						//
-						// Kui selle s6naga on seotud rohkem kui yks kandidaat (st - tegemist on osalise
-						// ylekattuvusega), katkestame yhendamise ...
-						//
-						if (rohkemKuiYksAjav){
-							// Kontrollime, kas viimase s6naga l6ppesid k6ik kandidaadid: kui 
-							// l6ppesid, v6ime eelmised yhendada ...
-							boolean voibYhendada = true;
-							AjavtSona viimaneSona = liitFraas.get( liitFraas.size() - 1 );
-							List<FraasisPaiknemiseKoht> paiknemised = viimaneSona.getAjavaljendiKandidaatides();
-							for (FraasisPaiknemiseKoht fraasisPaiknemiseKoht : paiknemised) {
-								if (!fraasisPaiknemiseKoht.onFraasiLopp()){
-									voibYhendada = false;
-									break;
-								}
-							}
-							if (voibYhendada){
-								AjavaljendiKandidaat ajav = new AjavaljendiKandidaat();
-								ajav.setAste(ASTE.YHENDATUD_FRAASINA);
-								ajav.votaAntudSonadegaSeotudKandidaadidAlamkandidaatideks(liitFraas);
-								AjaTuvastaja.seoSonadKandidaadiKylge(ajav, liitFraas);
-							} else {
-								// Peame ka hoolitsema selle eesti, et mitte-eraldiseisvad kandidaadid, mis potentsiaalsesse
-								// fraasi kaasati, saaksid nyyd ikkagi kustutatud ...
-								for (AjavtSona sonaLiitFraasis : liitFraas) {
-									if (sonaLiitFraasis.onSeotudMoneAjavaljendiKandidaadiga()){
-										AjavaljendiKandidaat eelmineAjav = (sonaLiitFraasis.getAjavaljendiKandidaadid()).get(0);
-									    if (eelmineAjav.isPoleEraldiseisevAjavaljend()){
-									    	eelmineAjav.eemaldaEnnastSonadeKyljest();
-									    }										
-									}
-								}
-							}
-							rohkemKuiYksAjav = false;	
-						} else {
-							// - Oli vaid yks ajavaljend ning seegi mitteeraldiseisev
-							if (viimaneAjavOliMitteEraldiseisev && !liitFraas.isEmpty()){
-								// siis eemaldame selle ajavaljendi s6nade kyljest ...
-								AjavaljendiKandidaat eelmineAjav = (liitFraas.get(liitFraas.size()-1)).getAjavaljendiKandidaadid().get(0);
-								eelmineAjav.eemaldaEnnastSonadeKyljest();
-							}
-						}
-						liitFraas.clear();
-						kasutatudTahised.clear();
-						viimaneAjavOliMitteEraldiseisev = false;
-					}
-				} else {
-					// Fraas l6ppes (yhtki kandidaati ei j2rgne), siis tyhjendame
-					if (rohkemKuiYksAjav){
-						AjavaljendiKandidaat ajav = new AjavaljendiKandidaat();
-						ajav.setAste(ASTE.YHENDATUD_FRAASINA);
-						ajav.votaAntudSonadegaSeotudKandidaadidAlamkandidaatideks(liitFraas);
-						AjaTuvastaja.seoSonadKandidaadiKylge(ajav, liitFraas);
-						rohkemKuiYksAjav = false;	
-					} else {
-						// - Oli vaid yks ajavaljend ning seegi mitteeraldiseisev
-						if (viimaneAjavOliMitteEraldiseisev && !liitFraas.isEmpty()){
-							// siis eemaldame selle ajavaljendi s6nade kyljest ...
-							AjavaljendiKandidaat eelmineAjav = (liitFraas.get(liitFraas.size()-1)).getAjavaljendiKandidaadid().get(0);
-							eelmineAjav.eemaldaEnnastSonadeKyljest();
-						}
-					}
-					liitFraas.clear();
-					kasutatudTahised.clear();
-					viimaneAjavOliMitteEraldiseisev = false;
+			// 1) Genereerime k6ikv6imalikud potentsiaalsed jadad
+			jadad =	PotentsLiidetavateKandidaatideJada.genereeriPotentsJadad( sonad );
+			// 2) Filtreerime jadasid liitumisreeglite j2rgi (j2tame alles vaid reeglite j2rgi fraasiks liituvad kandidaadid)
+			if (!jadad.isEmpty()){
+				PotentsLiidetavateKandidaatideJada.filtreeriPotentsJadadsidLiitumisReegliteJargi(jadad, this.liitumisReeglid);					
+			}
+			// 3) Filtreerime jadasid: hoiame 2ra vahemike liitmise;
+			if (!jadad.isEmpty()){
+				PotentsLiidetavateKandidaatideJada.filtreeriPotentsJadadsidStNiJargi(jadad);
+			}
+			// 4) Filtreerime jadasid ylekattuvuste j2rgi (kustutame jadad, mis on pikemate poolt t2ielikult ylekaetud)
+			if (!jadad.isEmpty()){
+				PotentsLiidetavateKandidaatideJada.filtreeriPotentsJadadsidYleKattuvuseJargi(jadad);					
+			}
+			// 5) Moodustame sobivate jadade p6hjal uued ajav2ljendikandidaadid
+			if (!jadad.isEmpty()){
+				for (PotentsLiidetavateKandidaatideJada jada : jadad) {
+					AjavaljendiKandidaat ajav = new AjavaljendiKandidaat();
+					ajav.setAste(ASTE.YHENDATUD_FRAASINA);
+					ajav.seoKylgeAlamkandidaadid( jada.getKandidaadid() );
+					AjaTuvastaja.seoSonadKandidaadiKylge( ajav, jada.getAjavtSonad() );
 				}
 			}
-			//  
-			//  C) Tekst sai l2bi, korrektsuse huvides peame kontrollima veel kogunenud pagasit
-			// 
-			if (rohkemKuiYksAjav){
-				AjavaljendiKandidaat ajav = new AjavaljendiKandidaat();
-				ajav.setAste(ASTE.YHENDATUD_FRAASINA);
-				ajav.votaAntudSonadegaSeotudKandidaadidAlamkandidaatideks(liitFraas);
-				AjaTuvastaja.seoSonadKandidaadiKylge(ajav, liitFraas);
-				rohkemKuiYksAjav = false;
-				viimaneAjavOliMitteEraldiseisev = false;
-			} else {
-				// - Oli vaid yks ajavaljend ning seegi mitteeraldiseisev
-				if (viimaneAjavOliMitteEraldiseisev && !liitFraas.isEmpty()){
-					// siis eemaldame selle ajavaljendi s6nade kyljest ...
-					AjavaljendiKandidaat eelmineAjav = (liitFraas.get(liitFraas.size()-1)).getAjavaljendiKandidaadid().get(0);
-					eelmineAjav.eemaldaEnnastSonadeKyljest();
+		}
+		// 6) Kustutame: A. mitteeraldiseisvad kandidaadid ning
+		//               B. kandidaadid, mis kaetakse jadade poolt t2ielikult yle;
+		for (int i = 0; i < sonad.size(); i++) {
+			AjavtSona sona = sonad.get(i);
+			if (sona.onSeotudMoneAjavaljendiKandidaadiga()){
+				List<AjavaljendiKandidaat> kandidaadid = sona.getAjavaljendiKandidaadid();
+				List<AjavaljendiKandidaat> toDelete = new ArrayList<AjavaljendiKandidaat>();
+				for (AjavaljendiKandidaat kandidaat : kandidaadid) {
+					//  Kontrollime, kas tegu on mitte-eraldiseisva kandidaadiga
+					//  (nt "kohaliku aja järgi"), mis saab ajav2ljendi moodustada vaid
+					//  pikema fraasi koosseisus, mitte yksinda
+					if (kandidaat.leiaK6igeK6rgemYlemkandidaat() == kandidaat &&
+						kandidaat.isPoleEraldiseisevAjavaljend()){
+						toDelete.add( kandidaat );
+					} else if (kandidaat.leiaK6igeK6rgemYlemkandidaat() == kandidaat && 
+								jadad != null && !jadad.isEmpty()){
+						// Kontrollime, kas m6ni jada neelab antud yksiku kandidaadi 
+						// t2ielikult, st on sellest pikem ning h6lmab selle t2ielikult;
+						//  Nt DATE '1934 aasta sügisel' sisse j22b DURATION '1934 aasta';
+						for (PotentsLiidetavateKandidaatideJada jada : jadad) {
+							if (jada.kasJadaNeelabAjavaljendiKandidaadi(kandidaat)){
+								toDelete.add( kandidaat );
+								break;
+							}
+						}
+					}
 				}
-			}				
+				if (!toDelete.isEmpty()){
+					for (AjavaljendiKandidaat kandidaat : toDelete) {
+						kandidaat.eemaldaEnnastSonadeKyljest();
+					}
+				}
+			}
+		}
+		if (jadad != null && !jadad.isEmpty()){
+			jadad.clear();
 		}
 	}
 	
@@ -1228,70 +1101,6 @@ public class AjaTuvastaja {
 		}
 	}
 
-	//==============================================================================
-	//   	L i i t u m i s r e e g l i t e   e t t e v a l m i s t u s
-	//==============================================================================
-
-	/**
-	 *  Tagastab ainult m22ratud astmega liitumisreeglid.
-	 */
-	private List<LiitumisReegel> filtreeriEtteantudAstmegaLiitumisReeglid(ASTE aste){
-		List<LiitumisReegel> liitumisReegliteAlamHulk =
-			new ArrayList<LiitumisReegel>( this.liitumisReeglid );
-		Iterator<LiitumisReegel> iteraator = liitumisReegliteAlamHulk.iterator();
-		while (iteraator.hasNext()) {
-			LiitumisReegel liitumisReegel = (LiitumisReegel) iteraator.next();
-			if (!(liitumisReegel.getYhendamiseAste() == aste)){
-				iteraator.remove();
-			}
-		}
-		return liitumisReegliteAlamHulk;
-	}
-	
-	/**
-	 *   Loob liitumisreeglite p6hjal paisktabeli, mille v6tmeteks on mustrit2histe
-	 *  jarjestatud kombinatsioonid. Tabeli v6tmed luuakse meetodi 
-	 *  <tt>TextUtils.looMustriTahisteVoti</tt> abil; et kontrollida, kas k6rvutiseisvaid
-	 *  ajavaljendikandidaate saab liita, tuleb nende mustritahised lasta l2bi sama meetodi
-	 *  ning kontrollida saadud v6tme asumist paisktabelis.
-	 *  <p>
-	 *  NB! Kui <tt>eraldaVabaJarjekorragaTahised</tt> on t6ene, eraldatakse ainult vaba
-	 *  jarjekorraga liitumisreeglid, vastasel juhul eraldatakse fikseeritud jarjekorraga
-	 *  liitumisreeglid. 
-	 */
-	private HashMap<String, String> eraldaLubatudTahistePaarid(
-										List<LiitumisReegel> sisendLiitumisReegelid,
-										boolean eraldaVabaJarjekorragaTahised){
-		HashMap<String, String> tahistePaarid = new HashMap<String, String>();
-		for (LiitumisReegel liitumisReegel : sisendLiitumisReegelid) {
-			if (!liitumisReegel.onFikseeritudJarjekord() && eraldaVabaJarjekorragaTahised){
-				String[] mustriTahised = liitumisReegel.getMustriTahised();
-				String v6ti = TextUtils.looMustriTahisteVoti( 
-						Arrays.asList(mustriTahised), true );
-				if (v6ti != null && v6ti.length() > 0){
-					if (liitumisReegel.isTapseltKorvuti()){
-						tahistePaarid.put(v6ti, "TK");
-					} else {
-						tahistePaarid.put(v6ti, "1");
-					}
-				}
-			} else if (liitumisReegel.onFikseeritudJarjekord() && !eraldaVabaJarjekorragaTahised){
-				String[] mustriTahised = liitumisReegel.getMustriTahised();
-				String v6ti = TextUtils.looMustriTahisteVoti( 
-						Arrays.asList(mustriTahised), false );
-				if (v6ti != null && v6ti.length() > 0){
-					if (liitumisReegel.isTapseltKorvuti()){
-						tahistePaarid.put(v6ti, "TK");
-					} else {
-						tahistePaarid.put(v6ti, "1");
-					}
-				}
-
-			}
-		}
-		return tahistePaarid;
-	}
-	
 	//==============================================================================
 	//   	G e t t e r s   &   S e t t e r s 
 	//==============================================================================	

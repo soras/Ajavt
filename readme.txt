@@ -415,7 +415,7 @@
    Acknowledgements and 
    license
 ============================
-  Copyright (C) 2009-2015  University of Tartu
+  Copyright (C) 2009-2016  University of Tartu
   Author:   Siim Orasmaa  ( siim . orasmaa {at} ut . ee )
 
   Ajavt is released under the GNU General Public License version 2.
