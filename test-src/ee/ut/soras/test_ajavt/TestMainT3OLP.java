@@ -1,5 +1,5 @@
 //  Evaluation tools for Ajavt
-//  Copyright (C) 2009-2015  University of Tartu
+//  Copyright (C) 2009-2016  University of Tartu
 //  Author:   Siim Orasmaa
 //  Contact:  siim . orasmaa {at} ut . ee
 //  
@@ -88,6 +88,7 @@ public class TestMainT3OLP {
 		 boolean debugLogi      = false;    // täiemahuline logimine
 		 boolean onlyPureTimeML = false;    // lubame ainult puhast TimeML-i
 		 boolean measureSpeed   = false;    // mõõdame protsessimise kiirust
+		 String filterFilesByPrefix = null; // kas hinnata ainult teatud prefiksiga failidel?
 		 if (args.length > 0){
 			 for (int i = 0; i < args.length; i++) {
 				if (args[i].equals("-noDetails")){
@@ -111,6 +112,9 @@ public class TestMainT3OLP {
 				if (args[i].equals("-rulesLoc") && (i + 1 < args.length)){
 					inputRulesFile = args[i+1];
 				}
+				if (args[i].equals("-filterByPrefix") && (i + 1 < args.length)){
+					filterFilesByPrefix = args[i+1];
+				}
 			}
 		 }
 		 // Check for existence of given directories
@@ -128,11 +132,15 @@ public class TestMainT3OLP {
 		 }
 		 initializeDecimalFormatter();
 		 LogiPidaja testLog = 
-			 viiLabiTERNTestimineT3OLPTMXKorpusKaustas(testCorpusLoc, "UTF-8", resultsDir, noDetails, debugLogi, onlyPureTimeML, measureSpeed);
+			 viiLabiTERNTestimineT3OLPTMXKorpusKaustas(testCorpusLoc, "UTF-8", resultsDir, noDetails, debugLogi, onlyPureTimeML, measureSpeed, filterFilesByPrefix);
 		 if (compareToLast){
 		   // Kui tulemustefail on null, v6rdleme viimase tulemusega
+			 String inputPrefix = "test_t3olp";
+			 if (filterFilesByPrefix != null){
+				inputPrefix += '_' + filterFilesByPrefix;
+			 }
 			 Abimeetodid.compareResultToLastLoggedResult( new File( resultsDir ),
-					 (testLog != null) ? (testLog.getRaportiFailiNimi()) : (null),   "test_t3olp",    "_t3olp",   "UTF-8"  ); 
+					 (testLog != null) ? (testLog.getRaportiFailiNimi()) : (null), inputPrefix,    "_t3olp",   "UTF-8"  ); 
 		 }
 		 
 	}
@@ -151,6 +159,9 @@ public class TestMainT3OLP {
 	 *  kuvades vastavalt vajadusele testimistulemuste detaile (st ajav2ljendite joonduseid ja vigu). Yhtlasi
 	 *  trykitakse tulemused ka ekraanile.
 	 *  <p>
+	 *  Kui <tt>requiredFilePrefix != null</tt>, siis toimub hindamine ainult failidel, mille nimes on prefiks 
+	 *  <tt>requiredFilePrefix</tt>.
+	 *  <p>
 	 *  Testimisel kasutatakse TERN-stiilis hindamist: iga TIMEX atribuudi kohta tuuakse eraldi v2lja 
 	 *  saagis ja tapsus.
 	 *  <p>
@@ -163,13 +174,18 @@ public class TestMainT3OLP {
 			                                                             boolean noDetails,
 			                                                             boolean debugLogi, 
 			                                                        boolean onlyPureTimeML, 
-			                                                          boolean measureSpeed){
+			                                                          boolean measureSpeed,
+			                                                          String requiredFilePrefix){
 		 File dir = new File( korpuseKaust );
-	 	 LogiPidaja testLog = new LogiPidaja(true, tulemusKaust + File.separator + "test_t3olp");
-	 	 // initsialiseerime tuvastaja 
-	 	 initializeAjavt( ajaVTLoc, null );
- 	 	 testLog.setKirjutaLogiValjundisse(true);
- 	 	 String[] corpora = dir.list();
+		 String logFilePath = tulemusKaust + File.separator + "test_t3olp";
+		 if (requiredFilePrefix != null){
+			logFilePath = tulemusKaust + File.separator + "test_t3olp_" + requiredFilePrefix;
+		 }
+		 LogiPidaja testLog = new LogiPidaja(true, logFilePath);
+		 // initsialiseerime tuvastaja 
+		 initializeAjavt( ajaVTLoc, null );
+		 testLog.setKirjutaLogiValjundisse(true);
+		 String[] corpora = dir.list();
  	     if (corpora != null){
  	    	KiiruseTestiTulemus kiiruseTest = null;
  	    	if (measureSpeed){
@@ -182,6 +198,10 @@ public class TestMainT3OLP {
  	        for (int i = 0; i < corporaList.size(); i++) {
  	            // Get filename of file or directory
  	            String filename = corporaList.get(i);
+ 	            // If required: apply the prefix filter and allow only file names passing the filter
+ 	            if (requiredFilePrefix!=null && !filename.startsWith(requiredFilePrefix)){
+ 	            	continue;
+ 	            }
  	            if (filename.endsWith(".t3-olp-tmx") || filename.endsWith(".t3-olp-ajav")){
  	 	            testLog.println("----------------------------------------------");
  	 	            testLog.println("   "+filename+"");
