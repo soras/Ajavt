@@ -82,6 +82,7 @@
           <classpath>
              <pathelement location="lib/joda-time-1.6.jar"/>
              <pathelement location="lib/javax.json-1.0.4.jar"/>
+             <pathelement location="lib/diffutils-1.2.1.jar"/>
           </classpath>
        </javac>
   </target>
@@ -120,6 +121,7 @@
         <fileset dir="${lib}">
            <include name="*.jar"/>
            <exclude name="junit-*.jar"/>
+           <exclude name="diffutils-*.jar"/>
            <exclude name="hamcrest-core-*.jar"/>
         </fileset>
         <fileset dir="${resdir}" includes="*.xml"/>
@@ -154,6 +156,7 @@
             <fileset dir="${lib}">
                <include name="*.jar"/>
                <exclude name="junit-*.jar"/>
+               <exclude name="diffutils-*.jar"/>
                <exclude name="hamcrest-core-*.jar"/>
             </fileset>
             <fileset dir="${resdir}" includes="*.xml"/>
@@ -201,6 +204,7 @@
           <classpath>
               <pathelement location="lib/joda-time-1.6.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
+              <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
           </classpath>
        </java>
@@ -216,6 +220,7 @@
           <classpath>
               <pathelement location="lib/joda-time-1.6.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
+              <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
           </classpath>
        </java>
@@ -231,6 +236,7 @@
           <classpath>
               <pathelement location="lib/joda-time-1.6.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
+              <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
           </classpath>
        </java>
@@ -246,6 +252,7 @@
           <classpath>
               <pathelement location="lib/joda-time-1.6.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
+              <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
           </classpath>
        </java>
@@ -263,6 +270,7 @@
           <classpath>
               <pathelement location="lib/joda-time-1.6.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
+              <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
           </classpath>
        </java>
@@ -277,6 +285,7 @@
           <classpath>
               <pathelement location="lib/joda-time-1.6.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
+              <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
           </classpath>
        </java>
@@ -291,6 +300,7 @@
           <classpath>
               <pathelement location="lib/joda-time-1.6.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
+              <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
           </classpath>
        </java>

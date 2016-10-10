@@ -14,3 +14,11 @@
             * GNU General Public License (GPL - Version 2, June 1991) with the Classpath Exception
             https://jsonp.java.net/license.html
 
+
+ This library is used for testing/evaluating Ajavt:
+  
+  diffutils-1.2.1.jar
+  web page: https://code.google.com/archive/p/java-diff-utils/issues
+  license:  * Apache License Version 2.0
+            http://www.apache.org/licenses/LICENSE-2.0
+

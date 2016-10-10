@@ -84,7 +84,7 @@ public class TestMainT3OLP {
 	 */
 	public static void main(String[] args) {
 		 boolean noDetails      = false;    // hindamisel ei kuvata detaile
-		 boolean compareToLast  = false;    // võrdlemine viimase tulemusega (praegu pole saadaval)
+		 boolean compareToLast  = false;    // võrdlemine viimase tulemusega
 		 boolean debugLogi      = false;    // täiemahuline logimine
 		 boolean onlyPureTimeML = false;    // lubame ainult puhast TimeML-i
 		 boolean measureSpeed   = false;    // mõõdame protsessimise kiirust
@@ -129,11 +129,11 @@ public class TestMainT3OLP {
 		 initializeDecimalFormatter();
 		 LogiPidaja testLog = 
 			 viiLabiTERNTestimineT3OLPTMXKorpusKaustas(testCorpusLoc, "UTF-8", resultsDir, noDetails, debugLogi, onlyPureTimeML, measureSpeed);
- 	     //if (compareToLast){
- 	       // Kui tulemustefail on null, v6rdleme viimase tulemusega
- 	     //	 Abimeetodid.compareResultToLastLoggedResult( new File( resultsDir ),
- 	     //			 (testLog != null) ? (testLog.getRaportiFailiNimi()) : (null),   "test_t3olp",    "_t3olp",   "UTF-8"  ); 
- 	     //}
+		 if (compareToLast){
+		   // Kui tulemustefail on null, v6rdleme viimase tulemusega
+			 Abimeetodid.compareResultToLastLoggedResult( new File( resultsDir ),
+					 (testLog != null) ? (testLog.getRaportiFailiNimi()) : (null),   "test_t3olp",    "_t3olp",   "UTF-8"  ); 
+		 }
 		 
 	}
 	

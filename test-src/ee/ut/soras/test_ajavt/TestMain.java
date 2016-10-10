@@ -96,7 +96,7 @@ public class TestMain {
 	 */
 	public static void main(String[] args) {
 		 boolean noDetails      = false;    // hindamisel ei kuvata detaile
-		 boolean compareToLast  = false;    // võrdlemine viimase tulemusega (praegu pole saadaval)
+		 boolean compareToLast  = false;    // võrdlemine viimase tulemusega
 		 boolean debugLogi      = false;    // täiemahuline logimine
 		 boolean onlyPureTimeML = false;    // lubame ainult puhast TimeML-i
 		 boolean measureSpeed   = false;    // mõõdame protsessimise kiirust
@@ -173,10 +173,10 @@ public class TestMain {
 			 LogiPidaja testLog = viiLabiTERNTestimineKorpusKaustas(testCorpusLoc, "UTF-8", resultsDir, noDetails, debugLogi, onlyPureTimeML, measureSpeed, forceMorphAnalysis);
 			 tulemusteFail = testLog.getRaportiFailiNimi();
 		 }
- 	     // Kui n6utud, v6rdleme saadud tulemust eelmise tulemusega ...
- 	     //if (compareToLast){
- 	     //   Abimeetodid.compareResultToLastLoggedResult( new File( resultsDir ), tulemusteFail, "test_", "",  "UTF-8" ); // Kui tulemustefail on null, v6rdleme viimase tulemusega
- 	     //}
+		 // Kui n6utud, v6rdleme saadud tulemust eelmise tulemusega ...
+		 if (compareToLast){
+		    Abimeetodid.compareResultToLastLoggedResult( new File( resultsDir ), tulemusteFail, "test_", "",  "UTF-8" ); // Kui tulemustefail on null, v6rdleme viimase tulemusega
+		 }
 	}
 	
 	/**

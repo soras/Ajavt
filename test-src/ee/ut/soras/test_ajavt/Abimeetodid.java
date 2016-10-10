@@ -32,6 +32,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import difflib.Delta;
+import difflib.DiffUtils;
+import difflib.Patch;
 import ee.ut.soras.ajavtV2.EelTootlus;
 import ee.ut.soras.ajavtV2.util.LogiPidaja;
 import ee.ut.soras.wrappers.EstyhmmWrapper;
@@ -757,6 +760,243 @@ public class Abimeetodid {
 	    }
 		return new TestimisTulemusTERNkoond(tulemusIlmutatudValjendid, tulemusVarjatudValjendid);
 	}
+
+	// =======================================================================================
+	//      T e k s t i f a i l i d e     v õ r d l e m i n e     s i s u     j ä r g i  
+	// =======================================================================================
+	
+	/**
+	 *   V6rdlem etteantud tulemust (logifailis <tt>lastFileName</tt>) sellele ajaliselt vahetult eelneva
+	 *   tulemusega ning leiab erinevused (toob v2lja, millised read on failides muudetud).
+	 *   <p>
+	 *   Eeldab, et k6ik uuritavad logifailid paiknevad kaustas <tt>logDir</tt> ning failinimed on kujul:
+	 *   <br>
+	 *   <code>{inputPrefix}</code><code>{ISO-formaadis kuupäev}.txt</code>
+	 *   <p>
+	 *   Tulemused kirjutatakse samma kausta: faili, mille nimi on kujul:
+	 *   <br>
+	 *   <code>vordlus{outputSuffix}</code><code>{ISO-formaadis kuupäev}.txt</code>  
+	 *   <p>
+	 *   Kui <tt>lastFileName</tt> on <tt>null</tt>, v6etakse selle asemele jooksvast kaustast ajaliselt
+	 *   hiliseim logifail.
+	 */
+	static void compareResultToLastLoggedResult(File logDir, String lastFileName, String inputPrefix, String outputSuffix, String encoding){
+		 File dir = logDir;
+		 // V6tame kataloogist testilogide failid 
+		 String[] filesInCurrentDir = dir.list( new TestLogFilenameFilter(inputPrefix) );
+		 if (filesInCurrentDir != null && filesInCurrentDir.length > 1){
+			String logDirAsStr = logDir.getAbsolutePath() + File.separator;
+			LogiPidaja vordluseLog = new LogiPidaja(true, logDirAsStr + "vordlus" + outputSuffix);
+			vordluseLog.setKirjutaLogiValjundisse(true);
+			vordluseLog.println("--------------------------------------------------------------------------------");
+			vordluseLog.println("  Testitulemuste kataloogis:\n  "+dir);
+			vordluseLog.println("  Leiame erinevused kahe viimase tulemuse vahel:");
+			// Sorteerime kuup2eva kasvamise j2rjekorda (ajastamp failinimes!)
+			Arrays.sort( filesInCurrentDir );
+			//
+			// 1) Leiame k2esoleva testi tulemuste logifaili ning talle ajaliselt vahetult eelneva
+			//    testi logifaili
+			//
+			int i = filesInCurrentDir.length - 1;
+			String foundFirstFile = null;
+			String foundSecndFile = null;
+			while (i > 0){
+				String fileName1 = filesInCurrentDir[i];
+				if (lastFileName == null || (lastFileName).equals(fileName1)){
+					int j = i - 1;
+					if (j >= 0){
+						String fileName2 = filesInCurrentDir[j];
+						foundFirstFile = fileName1;
+						foundSecndFile = fileName2;
+					}
+				}
+				if (foundSecndFile != null){
+					break;
+				}
+				i--;
+			}
+			//
+			// 2) V6rdleme failide sisu omavahel, testifail-testifail haaval
+			//
+			if (foundFirstFile != null && foundSecndFile != null){
+				vordluseLog.println("    "+foundSecndFile);
+				vordluseLog.println("    "+foundFirstFile);
+				vordluseLog.println("--------------------------------------------------------------------------------");
+				vordluseLog.println();
+				System.out.println("          ---> "+vordluseLog.getRaportiFailiNimi());
+				String secondFileWithPath = logDir.getAbsolutePath() + File.separator + foundSecndFile;
+				String firstFileWithPath  = logDir.getAbsolutePath() + File.separator + foundFirstFile;
+				Abimeetodid.compareResultsFileByFile(secondFileWithPath, firstFileWithPath, encoding, vordluseLog);
+			} else {
+				vordluseLog.println(" Vorreldatavaid faile ei 6nnestunud leida! ");
+			}
+			vordluseLog.setKirjutaLogiFaili(false);
+		} else {
+			System.out.println();
+			System.out.println(" Logifaile pole v6rdlemiseks piisaval arvul! ");
+		}
+	}
+
+	/**
+	 *  V6rdleme tulemusi fail-faili haaval ja kirjutame tulemused vordluslogisse.
+	 */
+	static void compareResultsFileByFile(String firstFile, String secondFile, String encoding, LogiPidaja vordluseLog){
+		try {
+			LinkedList<String> contentBlockInFirst = new LinkedList<String>();
+			LinkedList<String> contentBlockInSecnd = new LinkedList<String>();
+			LinkedList<String> fileNameInFirst = new LinkedList<String>();
+			LinkedList<String> fileNameInSecnd = new LinkedList<String>();
+			BufferedReader brFirst = new BufferedReader(new InputStreamReader(new FileInputStream(firstFile),  encoding));
+			BufferedReader brSecnd = new BufferedReader(new InputStreamReader(new FileInputStream(secondFile), encoding));
+			boolean proceed = true;
+			String strLineInFirst;
+			String strLineInSecnd;   
+			while ( proceed ) {
+				strLineInFirst = brFirst.readLine();
+				if (strLineInFirst != null){
+					// -------------------------------------------------------------------
+					// ------------------    Kogume kokku failinime   --------------------
+					// ------------------           esimeses          --------------------
+					// -------------------------------------------------------------------
+					if (fileNameInFirst.size() < 3){
+						if (strLineInFirst.matches("-{46}") || fileNameInFirst.size() == 1){
+							fileNameInFirst.add(strLineInFirst);
+						}
+					}
+					// -------------------------------------------------------------------
+					// ------------------    Leiame vastava failinime   ------------------
+					// ------------------            teises             ------------------
+					// -------------------------------------------------------------------
+					if ( fileNameInFirst.size() == 3 && fileNameInSecnd.size() < 3 ){
+						while ((strLineInSecnd = brSecnd.readLine()) != null){
+							if (strLineInSecnd.matches("-{46}") || fileNameInSecnd.size() == 1){
+								fileNameInSecnd.add( strLineInSecnd );
+							}
+							if (fileNameInSecnd.size() == 3){
+								break;
+							}
+						}
+						if ( fileNameInSecnd.size() != 3 || 
+								!(fileNameInFirst.get(1)).equals(fileNameInSecnd.get(1)) ){
+							System.err.println("Error: Unable to find");
+							System.err.println(fileNameInFirst.get(1));
+							System.err.println("in file "+secondFile);
+							vordluseLog.println("Error: Unable to find");
+							vordluseLog.println(fileNameInFirst.get(1));
+							vordluseLog.println("in file "+secondFile);
+							vordluseLog.setKirjutaLogiFaili(false);
+							brFirst.close();
+							brSecnd.close();
+							System.exit(-1);
+						}
+					}
+				} else {
+					proceed = false;
+				}
+				// -------------------------------------------------------------------
+				// ---------------    Kogume kokku v6rreldavad sisud   ---------------
+				// -------------------------------------------------------------------
+				if (fileNameInFirst.size() == 3 && fileNameInSecnd.size() == 3){
+					for (String string : fileNameInFirst) {
+						vordluseLog.println(string);
+					}
+					fileNameInFirst.clear();
+					fileNameInSecnd.clear();
+					// -------------------------------------------------------------------
+					// ---------------------      Esimese   sisu        ------------------
+					// -------------------------------------------------------------------
+					while ((strLineInFirst = brFirst.readLine()) != null){
+						if (strLineInFirst.matches("-{46}")){
+							fileNameInFirst.add(strLineInFirst);
+							break;
+						} else {
+							contentBlockInFirst.add(strLineInFirst);
+						}
+					}
+					// -------------------------------------------------------------------
+					// ---------------------       Teise    sisu        ------------------
+					// -------------------------------------------------------------------
+					while ((strLineInSecnd = brSecnd.readLine()) != null){
+						if (strLineInSecnd.matches("-{46}")){
+							fileNameInSecnd.add(strLineInSecnd);
+							break;
+						} else {
+							contentBlockInSecnd.add(strLineInSecnd);
+						}
+					}
+					// -------------------------------------------------------------------
+					// -----------------------   Vordleme sisusid     --------------------
+					// -------------------------------------------------------------------
+					try {
+						Patch patch = DiffUtils.diff( contentBlockInFirst, contentBlockInSecnd );
+						for (Delta delta: patch.getDeltas()) {
+							(vordluseLog.getRaportiVoog()).println("========= "+delta.getType()+" =========");
+							int oldStart  = (delta.getOriginal()).getPosition();
+							@SuppressWarnings("rawtypes")
+							List oldLines = (delta.getOriginal()).getLines();
+							int oldEnd    = (delta.getOriginal()).getPosition()+Math.max(oldLines.size()-1, 0);
+							(vordluseLog.getRaportiVoog()).println("Old line(s) "+String.valueOf(oldStart)+"-"+String.valueOf(oldEnd)+"");
+							for (int i = 0; i < oldLines.size(); i++) {
+								(vordluseLog.getRaportiVoog()).println(" "+String.valueOf(oldStart+i)+": "+String.valueOf(oldLines.get(i)));
+							}
+							int newStart  = (delta.getRevised()).getPosition();
+							@SuppressWarnings("rawtypes")
+							List newLines = (delta.getRevised()).getLines();
+							int newEnd    = (delta.getRevised()).getPosition()+Math.max(newLines.size()-1, 0);
+							(vordluseLog.getRaportiVoog()).println("New line(s) "+String.valueOf(newStart)+"-"+String.valueOf(newEnd)+"");
+							for (int i = 0; i < newLines.size(); i++) {
+								(vordluseLog.getRaportiVoog()).println(" "+String.valueOf(newStart+i)+": "+String.valueOf(newLines.get(i)));
+							}
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					contentBlockInFirst.clear();
+					contentBlockInSecnd.clear();
+					// -------------------------------------------------------------------
+					// -----   Kui j6uti l6ppu, kontrollime, kas m6lemas korraga  --------
+					// -------------------------------------------------------------------
+					if (strLineInFirst == null && strLineInSecnd != null){
+						System.err.println("Error: "+firstFile+ " ends before "+secondFile+"! Unable to compare all.");
+						vordluseLog.println("Error: "+firstFile+ " ends before "+secondFile+"! Unable to compare all.");
+						vordluseLog.setKirjutaLogiFaili(false);
+						brFirst.close();
+						brSecnd.close();
+						System.exit(-1);
+					}
+					if (strLineInFirst != null && strLineInSecnd == null){
+						System.err.println("Error: "+secondFile+ " ends before "+firstFile+"! Unable to compare all.");
+						vordluseLog.println("Error: "+secondFile+ " ends before "+firstFile+"! Unable to compare all.");
+						vordluseLog.setKirjutaLogiFaili(false);
+						brFirst.close();
+						brSecnd.close();
+						System.exit(-1);
+					}
+				}
+			}
+			brFirst.close();
+			brSecnd.close();
+		} catch (Exception e){ //Catch exception if any
+			System.err.println("Error: " + e.getMessage());
+		}
+	}
+	
+	/**
+	 *  Logifailide nimede filter.
+	 *  
+	 *  @author Siim Orasmaa
+	 */
+	static class TestLogFilenameFilter implements FilenameFilter {
+		private String prefix = "";
+		
+		TestLogFilenameFilter(String prefix){
+			this.prefix = prefix;
+		}
+		
+		public boolean accept(File dir, String name) {
+			return name.matches(prefix+"(_|[0-9]|-)+\\.txt");
+		}
+	};
 	
 	// =======================================================================================
 	//        M o r f    a n a l y y s i    c a c h e ' i    h a l d a m i n e  
