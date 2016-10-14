@@ -84,6 +84,14 @@ public class MorfAnRida {
 			}
 			if (attribName.equalsIgnoreCase("form")){
 				this.vormiNimetused = attribValue;
+				// (!) Vabamorfi JSON v2ljundis puudub vorminimetuste l6pus "," aga paljud meie mustrid
+				// (sh verbi grammatilise aja mustrid) eeldavad koma olemasolu -- seega on kriitiline
+				// see l6ppu lisada ...
+				if ((this.vormiNimetused) != null && 
+					(this.vormiNimetused).length() > 0 && 
+					!(this.vormiNimetused).endsWith(",")){
+					this.vormiNimetused = this.vormiNimetused + ",";
+				}
 			}
 			if (attribName.equalsIgnoreCase("partofspeech")){
 				this.sonaliik = "_"+attribValue+"_";

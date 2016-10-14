@@ -80,7 +80,7 @@ import ee.ut.soras.wrappers.impl.EstyhmmWrapperImpl;
  */
 public class AjaTuvastaja {
 
-	final private static String versioon = "2016-09-29_01";
+	final private static String versioon = "2016-10-14_01";
 	
 	private LogiPidaja logi;
 
