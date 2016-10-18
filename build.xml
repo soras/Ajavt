@@ -63,10 +63,10 @@
     <!-- Kompileerime ${src} kaustas paikneva l2htekoodi, paigutame
          tulemuse kausta ${build} -->
     <!-- reanumbrid erindis: debug="on" debuglevel="lines,vars,source" -->
-    <javac includeantruntime="false" target="1.7" source="1.7" srcdir="${src}" destdir="${build}" 
+    <javac includeantruntime="false" target="1.8" source="1.8" srcdir="${src}" destdir="${build}" 
            fork="yes" executable="${java.home.location}/bin/javac" >
         <classpath>
-           <pathelement location="lib/joda-time-1.6.jar"/>
+           <pathelement location="lib/joda-time-2.9.4.jar"/>
            <pathelement location="lib/javax.json-1.0.4.jar"/>
         </classpath>
     </javac>
@@ -76,11 +76,11 @@
         description="kompileeri automaattestide l2htekood" >
        <!-- Kompileerime kokku testklassid -->
        <!-- reanumbrid erindis:  debug="on" debuglevel="lines,vars,source" -->
-       <javac includeantruntime="false" target="1.7" source="1.7" srcdir="test-src" destdir="${build}" fork="yes"
+       <javac includeantruntime="false" target="1.8" source="1.8" srcdir="test-src" destdir="${build}" fork="yes"
               executable="${java.home.location}/bin/javac" 
               excludes="**/MorphStatistics.java,**/TestJodaTime.java,**/TestJodaTimeLocal.java" >
           <classpath>
-             <pathelement location="lib/joda-time-1.6.jar"/>
+             <pathelement location="lib/joda-time-2.9.4.jar"/>
              <pathelement location="lib/javax.json-1.0.4.jar"/>
              <pathelement location="lib/diffutils-1.2.1.jar"/>
           </classpath>
@@ -105,7 +105,7 @@
     <!-- Loome .JAR faili tarvis manifesti -->
     <manifest file="${dist}/MANIFEST.MF">
         <attribute name="Main-Class" value="ee.ut.soras.ajavtV2.Main"/>
-        <attribute name="Class-Path" value="joda-time-1.6.jar javax.json-1.0.4.jar"/>
+        <attribute name="Class-Path" value="joda-time-2.9.4.jar javax.json-1.0.4.jar"/>
     </manifest>
 
     <!-- Paigutame k6ik kaustas ${build} asuva .JAR faili -->
@@ -140,7 +140,7 @@
       <!-- Loome .JAR faili tarvis manifesti -->
       <manifest file="${dist}/MANIFEST.MF">
           <attribute name="Main-Class" value="ee.ut.soras.ajavtV2.Main"/>
-          <attribute name="Class-Path" value="joda-time-1.6.jar javax.json-1.0.4.jar"/>
+          <attribute name="Class-Path" value="joda-time-2.9.4.jar javax.json-1.0.4.jar"/>
       </manifest>
 
       <!-- Paigutame k6ik kaustas ${build} asuva .JAR faili -->
@@ -186,10 +186,10 @@
   <!-- <property name="use.tml.corpus.01" value="true" /> -->
   <!-- <property name="use.tml.corpus.02" value="true" /> -->
   <!-- <property name="use.tml.corpus.03" value="true" /> -->
-  <!-- <property name="use.tml.corpus.04" value="true" /> -->
+  <property name="use.tml.corpus.04" value="true" />
   <!-- <property name="use.t3o.corpus.01" value="true" /> -->
   <!-- <property name="use.t3o.corpus.02" value="true" /> -->
-  <!-- <property name="use.t3o.corpus.03" value="true" /> -->
+  <property name="use.t3o.corpus.03" value="true" /> 
   
   <target name="test-tml" depends="test-tml-01, test-tml-02, test-tml-03, test-tml-04" />
   
@@ -202,7 +202,7 @@
           <arg line="-morfLoc ${test.root}/MSc_thesis_2010_tml/mrf"/>
           <arg line="-resultsLoc ${test.root}/MSc_thesis_2010_tml/testlog"/>
           <classpath>
-              <pathelement location="lib/joda-time-1.6.jar"/>
+              <pathelement location="lib/joda-time-2.9.4.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
               <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
@@ -218,7 +218,7 @@
           <arg line="-morfLoc ${test.root}/MSc_thesis_other_tml/mrf"/>
           <arg line="-resultsLoc ${test.root}/MSc_thesis_other_tml/testlog"/>
           <classpath>
-              <pathelement location="lib/joda-time-1.6.jar"/>
+              <pathelement location="lib/joda-time-2.9.4.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
               <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
@@ -234,7 +234,7 @@
           <arg line="-morfLoc ${test.root}/MSc_thesis_2010_cleaned/mrf"/>
           <arg line="-resultsLoc ${test.root}/MSc_thesis_2010_cleaned/testlog"/>
           <classpath>
-              <pathelement location="lib/joda-time-1.6.jar"/>
+              <pathelement location="lib/joda-time-2.9.4.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
               <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
@@ -250,7 +250,7 @@
           <arg line="-morfLoc ${test.root}/MThesis_2010_tml_mod_2/mrf"/>
           <arg line="-resultsLoc ${test.root}/MThesis_2010_tml_mod_2/testlog"/>
           <classpath>
-              <pathelement location="lib/joda-time-1.6.jar"/>
+              <pathelement location="lib/joda-time-2.9.4.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
               <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
@@ -268,7 +268,7 @@
           <arg line="-corpusLoc ${test.root}/ERY2012_t3-olp-tmx_dev/t3-olp-tmx"/>
           <arg line="-resultsLoc ${test.root}/ERY2012_t3-olp-tmx_dev/testlog"/>
           <classpath>
-              <pathelement location="lib/joda-time-1.6.jar"/>
+              <pathelement location="lib/joda-time-2.9.4.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
               <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
@@ -283,7 +283,7 @@
           <arg line="-corpusLoc ${test.root}/ERY2012_t3-olp-ajav/t3-olp-ajav"/>
           <arg line="-resultsLoc ${test.root}/ERY2012_t3-olp-ajav/testlog"/>
           <classpath>
-              <pathelement location="lib/joda-time-1.6.jar"/>
+              <pathelement location="lib/joda-time-2.9.4.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
               <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
@@ -298,7 +298,7 @@
           <arg line="-corpusLoc ${test.root}/ERY2012_t3-olp-ajav_modified/t3-olp-ajav"/>
           <arg line="-resultsLoc ${test.root}/ERY2012_t3-olp-ajav_modified/testlog"/>
           <classpath>
-              <pathelement location="lib/joda-time-1.6.jar"/>
+              <pathelement location="lib/joda-time-2.9.4.jar"/>
               <pathelement location="lib/javax.json-1.0.4.jar"/>
               <pathelement location="lib/diffutils-1.2.1.jar"/>
               <pathelement location="${build}"/>
