@@ -2,7 +2,7 @@
  Libraries that Ajavt currently depends on, and their 
  respective licenses:
 
-  joda-time-1.6.jar
+  joda-time-2.9.4.jar
   web page: http://www.joda.org/joda-time/
   license:  * Apache License Version 2.0
             http://www.joda.org/joda-time/license.html

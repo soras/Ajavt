@@ -52,7 +52,7 @@
    Requirements
 =========================
  For building the program (JAR file):
-  ** Java JDK (at least version 1.7.x is expected);
+  ** Java JDK (at least version 1.8.x is expected);
   ** Apache Ant (at least version 1.8.2);
   
  For using the program:
