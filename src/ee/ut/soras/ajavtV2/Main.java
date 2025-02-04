@@ -309,12 +309,6 @@ public class Main {
 		// --------------------------------------------------------------------
 		//   *) V2ljund
 		// --------------------------------------------------------------------
-        //if (fullDebug || partialDebug){
-        //    for (int i = 0; i < tulemAjavtSonad.size(); i++) {
-        //        AjavtSona sona = tulemAjavtSonad.get(i);
-        //        System.out.println(' '+sona.getAlgSonaErisymbolidNormaliseeritud());
-        //    }
-        //}
 		try {
 			if (outputType.equalsIgnoreCase("stdout")){
 				PrintStream ps = new PrintStream(System.out, false, "UTF-8");
