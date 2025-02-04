@@ -418,7 +418,9 @@
   Copyright (C) 2009-2016  University of Tartu
   Author:   Siim Orasmaa  ( siim . orasmaa {at} ut . ee )
 
-  Ajavt is released under the GNU General Public License version 2.
+  Before 2025, Ajavt was released under GNU General Public License v2.0.
+  Since 2025, Ajavt is released under dual license: choose either GNU 
+  General Public License v2.0 or Apache 2.0 License. 
 
   Dependency libraries have their own respective license terms, see 
   "lib/LIB_LICENSES.txt" for details.
